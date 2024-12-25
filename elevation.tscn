@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://v0yyakm3uw6g"]
+
+[ext_resource type="Script" path="res://classes/World/elevation.gd" id="1_psqhh"]
+
+[node name="Elevation" type="Node2D"]
+script = ExtResource("1_psqhh")

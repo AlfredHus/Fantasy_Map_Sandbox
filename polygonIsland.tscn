@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://cxglm7a4qsn7q"]
+
+[ext_resource type="Script" path="res://polygon_island.gd" id="1_55r1y"]
+
+[node name="polygonIsland" type="Node2D"]
+script = ExtResource("1_55r1y")
+default_seed_points = 10
+area = Rect2(0, 0, 1152, 648)
+debug_voronoi_cells = true

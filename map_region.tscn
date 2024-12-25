@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://cbqm2w51t3qlf"]
+
+[ext_resource type="Script" path="res://map_region.gd" id="1_oik6k"]
+
+[node name="MapRegion" type="Area2D"]
+script = ExtResource("1_oik6k")
+
+[node name="Polygon2D" type="Polygon2D" parent="."]
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+
+[connection signal="input_event" from="." to="." method="_on_MapRegion_input_event"]
+[connection signal="mouse_entered" from="." to="." method="_on_MapRegion_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_MapRegion_mouse_exited"]

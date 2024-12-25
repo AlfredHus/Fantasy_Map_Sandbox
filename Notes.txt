@@ -1,0 +1,15 @@
+Sources used in application:
+	1. Based code and Deluanator: https://github.com/Volts-s/Delaunator-GDScript-4
+		- using the Delaunator code and the demo code as a starting point for the application
+	2. PossionDiskSampling: https://github.com/stephanbogner/godot-poisson-sampling
+		- using the poisson code and some of the demo code.
+	3. Added documentation from the Deluanator site to the Demo code: https://mapbox.github.io/delaunator/
+	4. Note. Volt-s added a delaulantor 	document page that is the same as the mapbox
+	   version but shows gdscript instead of Javascript. 
+	
+Gdscript coding guidelines
+
+Static Typing
+
+Arrays
+var some_name: Array[int]
