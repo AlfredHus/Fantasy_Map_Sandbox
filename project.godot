@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Polygon Island Generation"
-run/main_scene="res://polygonIsland.tscn"
+run/main_scene="res://fantasy_map_sandbox.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
 config/icon="res://icon.svg"
 

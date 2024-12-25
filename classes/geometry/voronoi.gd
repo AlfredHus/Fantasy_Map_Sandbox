@@ -124,7 +124,7 @@ func _init(points: PackedVector2Array, delaunay: Delaunator, boundary: Rect2) ->
 	setup_triangle_edges(points, delaunay)
 	#load_triangle_edges(points, delaunay)
 	#vertices = add_voronoi_vertices(points, delaunay)
-	pass
+	print ("cells[c]: ", cells["c"])
 	
 
 func _ready() -> void:
