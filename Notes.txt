@@ -4,8 +4,17 @@ Sources used in application:
 	2. PossionDiskSampling: https://github.com/stephanbogner/godot-poisson-sampling
 		- using the poisson code and some of the demo code.
 	3. Added documentation from the Deluanator site to the Demo code: https://mapbox.github.io/delaunator/
-	4. Note. Volt-s added a delaulantor 	document page that is the same as the mapbox
+	4. Note. Volt-s added a delaulantor document page that is the same as the mapbox
 	   version but shows gdscript instead of Javascript. 
+	5. tinyqueue code ported from : https://github.com/mourner/tinyqueue/tree/main
+		- also used some of the test code as well: https://github.com/mourner/tinyqueue/blob/main/test.js
+	6. lineclip: Port of javascript
+		- https://github.com/mapbox/lineclip
+	7. Polylabel: Port of javascript
+		- https://github.com/eqmiller/polylabel-csharp/blob/main/src/Polylabel-CSharp/Polylabel.cs
+	8. Port of Azgaars Fantasy Map Code
+		- https://github.com/Azgaar/Fantasy-Map-Generator
+	
 	
 Gdscript coding guidelines
 
@@ -13,3 +22,9 @@ Static Typing
 
 Arrays
 var some_name: Array[int]
+
+
+Ternary expressions
+https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_basics.html#statements-and-control-flow
+var x = (value) if (expression) else (value)
+y += 3 if y < 10 else -1

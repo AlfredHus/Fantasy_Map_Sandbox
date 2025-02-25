@@ -1,6 +1,12 @@
-class_name HeightmapTemplates
+class_name HeightMapTemplates
 # These are various templates used to generate the heightfield. It uses
 # multiline string literals using the triple quotes.
+#
+## Code from Azgaar's Fantasy Map Generator
+## Ported from https://github.com/Azgaar/Fantasy-Map-Generator
+#
+# https://github.com/Azgaar/Fantasy-Map-Generator/blob/5bb33311fba48ed83f797c77779dbb909d6e1958/config/heightmap-templates.js#L4
+# 
 # A dictionary is used to store the heightmap templates and the ascociated
 # data.
 # The fuction returns a dictionary of heightmap templates which is assigned
@@ -11,6 +17,7 @@ class_name HeightmapTemplates
 # This is an anonymous function, also known as lambdas.
 # https://docs.godotengine.org/en/4.3/classes/class_callable.html#class-callable-method-call
 #
+# The hill step of this form I believe is a Mountain: "Hill 1 90-100 44-56 40-60"
 
 var heightmap_templates: Dictionary = (func():
 	var volcano: String = """Hill 1 90-100 44-56 40-60
@@ -21,7 +28,33 @@ var heightmap_templates: Dictionary = (func():
 		Hill 1 35-55 75-80 25-75
 		Hill 0.5 20-25 10-15 20-25
 		Mask 3 0 0 0"""
-
+	# Test Hill
+	#var volcano: String = """Hill 1 20 50-50 50-50"""
+	# Test Pit
+	#var volcano: String = """
+	#Hill 1 40 50-50 50-50
+	#Pit 1 20 50-50 50-50
+	#"""
+	# Test Range
+	#var volcano: String = """Range 1 40-50 50-60 50-50"""	
+	# Test Range
+	#var volcano: String = """
+	#Hill 2 20 50-50 50-50
+	##Pit 1 20 50-50 50-50
+	##Range 1 40-50 50-60 50-50
+	#"""
+	# Test Add and Straits
+	#var volcano: String = """
+		#Add 20 all 0 0
+		#Hill 2 40-50 15-85 20-80
+		#Strait 5 vertical 0 0
+		#Smooth 2 0 0 0
+		#"""
+		
+	#var volcano: String = """
+		#Add 20 all 0 0
+		#Strait 5 vertical 0 0
+		#"""
 	var high_island: String = """Hill 1 90-100 65-75 47-53
 		Add 7 all 0 0
 		Hill 5-6 20-30 25-55 45-55
@@ -158,6 +191,9 @@ var heightmap_templates: Dictionary = (func():
 		Mask 3 0 0 0
 		Add -20 30-100 0 0
 		Range 6-8 40-50 5-95 10-90"""
+	#var fractious: String = """Hill 12-15 50-80 5-95 5-95
+		#Add 100 all 0 0
+		#Mask -.5 0 0 0"""
 
 	return {
 		"volcano": {"id": 0, "name": "Volcano", "template": volcano, "probability": 3},

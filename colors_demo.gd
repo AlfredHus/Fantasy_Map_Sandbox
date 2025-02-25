@@ -22,4 +22,3 @@ func show_off_all_the_pretty_colors():
 	Color.DARK_TURQUOISE						# click the preview
 	Color(0.9727, 0.019, 0.4229, 0.9255)		# to get a color picker
 	Color(0.9297, 0.852, 0.0254, 1)				# and change colors directly
-

@@ -1,0 +1,50 @@
+[gd_scene load_steps=2 format=3 uid="uid://cxglm7a4qsn7q"]
+
+[ext_resource type="Script" path="res://main.gd" id="1_l63tg"]
+
+[node name="FantasyMapSandbox" type="Node2D"]
+script = ExtResource("1_l63tg")
+_random_points = null
+_poisson_distribution = null
+_jittered_grid = true
+_points_from_image = null
+_default_seed_points = 1000
+_use_mouse_to_draw = null
+_draw_triangles = null
+_draw_filled_in_triangles = null
+_draw_triangle_edges = null
+_draw_triangle_edges_with_arrows = null
+_draw_voronoi_cells = null
+_draw_voronoi_cells_convex_hull = null
+_draw_voronoi_edges = null
+_draw_points = null
+_draw_centroids = null
+_cells_desired = 1000
+_draw_clickable_voronoi = null
+debug_mode = null
+sampling_min_distance = null
+sampling_poisson_max_tries = null
+area = Rect2(0, 0, 1152, 648)
+_draw_triangle_circumcenters = null
+_draw_triangle_centers = null
+_draw_triangle_incenters = null
+_draw_triangle_circumcenters_circles = null
+debug_triangles = null
+debug_voronoi_cells = null
+debug_adjacent_triangles = null
+debug_triangle_edges = null
+draw_voronoi_elevation = null
+_draw_voronoi_fantasy_heightmap = null
+selected_world = 3
+_draw_fantasy_map_elevations = true
+_generate_fantasy_map = null
+_generate_feature_map = null
+_generate_water_land_map = null
+_draw_voronoi_cell_site_position_data = null
+_draw_voronoi_points_position_data = null
+_draw_triangle_position_data = null
+triangle_position_data = null
+_draw_border_data = null
+_draw_boundary_data = null
+draw_neighbor_lines = null
+_draw_edges_around_point = null

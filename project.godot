@@ -12,12 +12,14 @@ config_version=5
 
 config/name="Polygon Island Generation"
 run/main_scene="res://fantasy_map_sandbox.tscn"
-config/features=PackedStringArray("4.3", "Forward Plus")
+config/features=PackedStringArray("4.3", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
 [display]
 
 window/size/initial_position=Vector2i(25, 0)
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [dotnet]
 

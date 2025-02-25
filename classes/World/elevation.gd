@@ -20,7 +20,8 @@ var textures : Dictionary = {}
 var images = {}
 
 func _init(voronoi: Voronoi) -> void:
-	voronoi_cell_elevation.resize(voronoi.voronoi_cell_sites.size())
+	#voronoi_cell_elevation.resize(voronoi.voronoi_cell_sites.size())
+	voronoi_cell_elevation.resize(voronoi.voronoi_cell_dict.size())
 	voronoi_vertex_elevation.resize(voronoi.voronoi_vertices.size())
 	voronoi_vertex_elevation_remapped.resize(voronoi.voronoi_vertices.size())
 	self.voronoi = voronoi
@@ -70,7 +71,7 @@ func generate_elevation(elevation_seed: int) -> void:
 				# vornoi cell vertices and assign that to the site.		
 				average_elevation += voronoi_vertex_elevation[search_result]
 		average_elevation /= voronoi.voronoi_cell_dict[key].size()
-		voronoi_cell_elevation[key] = average_elevation
+		#voronoi_cell_elevation[key] = average_elevation # FIXME Change array to dictionary or change to something else
 		
 		
 func generate_elevation_from_image() -> void:
@@ -240,7 +241,9 @@ func elevation_color_v1(elevation_value: float) -> Color:
 		color =  Color (0.87, 0.98, 0.89)	
 	else: color = Color(1,0,0)
 	
-	return color	# https://www.arcgis.com/home/item.html?id=e11ebaeb19544bb18c2afe440f063062	
+	return color	
+	
+	# https://www.arcgis.com/home/item.html?id=e11ebaeb19544bb18c2afe440f063062	
 func elevation_color_v2(elevation_value: float) -> Color:
 	var color: Color
 	if elevation_value > .95:  # > 8000
@@ -284,6 +287,109 @@ func elevation_color_v2(elevation_value: float) -> Color:
 	
 	return color	
 
+func elevation_color_v3(elevation_value: int) -> Color:
+	var color: Color
+	if elevation_value > 90:  # Mountains
+		color =  Color.BROWN
+	elif (elevation_value > 80): # Hills
+		color =  Color.SADDLE_BROWN
+	elif (elevation_value > 70): #
+		color =  Color.SANDY_BROWN
+	elif (elevation_value > 60): # 1000 - 2000
+		color =  Color.YELLOW
+	elif (elevation_value > 50): # 500 - 1000
+		color =  Color.LIGHT_YELLOW		
+	elif (elevation_value > 40): # 250 - 500
+		color =  Color.DARK_GREEN	
+	elif (elevation_value > 30): # 50 - 250
+		color =  Color.GREEN
+	elif (elevation_value > 20): # 10 - 50
+		color =  Color.LIGHT_GREEN
+	elif (elevation_value > 10): # 0 - 10
+		color =  Color.LIGHT_BLUE	
+	elif (elevation_value > 0): # >8000
+		color =  Color.NAVY_BLUE
+	elif (elevation_value == 0): # 4000 to -8000
+		color =  Color.DARK_BLUE
+	else: color = Color(1,0,0)
+	
+	return color	
+
+# http://seaviewsensing.com/pub/cpt-city/wkp/shadowxfox/index.html
+func elevation_color_cpt_city_columbia(elevation_value: int) -> Color:
+	if elevation_value == 0: return Color (0.0000,0.1176,0.3137)  # Blue
+	if elevation_value < 11: return Color (0.0000,0.2000,0.4000)  # Blue
+	if elevation_value < 22: return Color (0.0000,0.4000,0.6000)  # Blue
+	if elevation_value < 33: return Color (0.0000,0.6000,0.8039)  # Blue
+	if elevation_value < 38: return Color (0.3922,0.7843,1.0000)  # Blue
+	if elevation_value < 42: return Color (0.7765,0.9255,1.0000)  # Blue
+	if elevation_value < 44: return Color (0.5804,0.6706,0.5176)  # Green
+	if elevation_value < 45: return Color (0.6745,0.7490,0.5451)
+	if elevation_value < 46: return Color (0.7412,0.8000,0.5882)
+	if elevation_value < 50: return Color (0.8941,0.8745,0.6863)
+	if elevation_value < 55: return Color (0.9020,0.7922,0.5804)
+	if elevation_value < 66: return Color (0.8039,0.6706,0.5137)
+	if elevation_value < 77: return Color (0.8039,0.6706,0.5137)
+	if elevation_value < 88: return Color (0.7098,0.5961,0.5020)
+	if elevation_value <= 100: return Color (0.6078,0.4824,0.3843)
+	return Color.RED
+
+func elevation_color_cpt_city_topo_15lev(elevation_value: int) -> Color:
+	#if elevation_value == 0: return Color (0.1569,0.2118,0.6039)  # Blue
+	if elevation_value < 4: return Color.DARK_BLUE # Blue
+	if elevation_value < 7: return Color.BLUE # Blue
+	if elevation_value < 10: return Color.SKY_BLUE # Blue
+	#if elevation_value < 6: return Color (0.0000,0.7882,0.1961)   # Green
+	#if elevation_value < 12: return Color (0.1176,0.8275,0.4078)  # Green
+	if elevation_value < 18: return Color (0.3686,0.8784,0.4549)
+	if elevation_value < 25: return Color (0.6353,0.9216,0.5098)
+	if elevation_value < 31: return Color (0.8745,0.9725,0.5725)
+	if elevation_value < 37: return Color (0.9647,0.8980,0.5843)
+	if elevation_value < 43: return Color (0.7843,0.6980,0.4627)
+	if elevation_value < 50: return Color (0.6353,0.4941,0.3686)
+	if elevation_value < 56: return Color (0.5608,0.3804,0.3294)
+	if elevation_value < 62: return Color (0.6353,0.4902,0.4549)
+	if elevation_value < 68: return Color (0.6980,0.5882,0.5451)
+	if elevation_value < 75: return Color (0.7804,0.6902,0.6667)
+	if elevation_value < 81: return Color (0.8588,0.8039,0.7922)
+	if elevation_value < 87: return Color (0.9255,0.8941,0.8863)
+	if elevation_value < 93: return Color (1.0000,1.0000,1.0000)
+	if elevation_value <= 100: return Color (1.0000,1.0000,1.0000)
+	return Color.RED
+
+# Land is greater than 20 which is the default set by Azgaars code
+# so for now we will just used that value.
+func elevation_color_azgaar_colors(elevation_value: int) -> Color:
+	#if elevation_value == 0: return Color (0.1569,0.2118,0.6039)  # Blue
+	
+	# First color is a Dark Blue, then following colors are Blue
+	# from darkest to lightest
+	if elevation_value < 6: return Color (0.42,0.55,0.74) 
+	if elevation_value < 8: return Color (0.47,0.64,0.79) # Blue
+	if elevation_value < 10: return Color (0.54,0.69,0.83) # Blue
+	if elevation_value < 20: return Color (0.6, .69, .83)  # Blue
+	if elevation_value < 23: return Color (0.3686,0.8784,0.4549) # Green
+	if elevation_value < 26: return Color (0.6353,0.9216,0.5098) # Green
+	if elevation_value < 31: return Color (0.8745,0.9725,0.5725) # Green
+	if elevation_value < 37: return Color (0.9647,0.8980,0.5843) # Yellow
+	if elevation_value < 43: return Color (0.7843,0.6980,0.4627) # Yellow Brown
+	if elevation_value < 50: return Color (0.6353,0.4941,0.3686) # Brown
+	if elevation_value < 56: return Color (0.5608,0.3804,0.3294)
+	if elevation_value < 62: return Color (0.6353,0.4902,0.4549)
+	if elevation_value < 68: return Color (0.6980,0.5882,0.5451) # Brown
+	if elevation_value < 75: return Color (0.7804,0.6902,0.6667) # Reddish brown
+	if elevation_value < 81: return Color (0.8588,0.8039,0.7922) # Brown
+	if elevation_value < 87: return Color (0.9255,0.8941,0.8863) # Light Grey
+	if elevation_value < 93: return Color (1.0000,1.0000,1.0000)
+	if elevation_value <= 100: return Color (1.0000,1.0000,1.0000)
+	return Color.RED
+	
+	
+func elevation_color_azgaar_colors_bw(elevation_value: int) -> Color:
+	if elevation_value == 0: return Color.BLACK
+	if elevation_value < 99: return Color.BLUE
+	if elevation_value == 100: return Color.WHITE
+	return Color.RED
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	pass # Replace with function body.

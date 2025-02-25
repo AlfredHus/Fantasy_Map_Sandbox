@@ -1,8 +1,11 @@
 # Used to support debugging the application.
-class_name debug
+class_name Debug
 extends Node
 
-func _init():
+var _grid: Grid
+
+func _init(grid: Grid):
+	_grid = grid
 	pass
 
 # Called when the node enters the scene tree for the first time.
@@ -11,7 +14,7 @@ func _ready() -> void:
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	pass
 	
 	
@@ -42,15 +45,17 @@ func print_triangles_data(points: PackedVector2Array, delaunay: Delaunator, voro
 	#var index: int
 	print ("Total number of triangle vertices: ", delaunay.triangles.size())
 	print ("Total number of triangles: ", delaunay.triangles.size() / 3)
-	print ("delaunay.triangles indexes: Size(", delaunay.triangles.size(), ") Indexes: ", delaunay.triangles)
-	#print ("vertices[c]: ", voronoi.vertices["c"])
-	#print ("Triangle Coordinates: ", "Size(", voronoi.triangle_edges_coordinates.size(), ") Vertices: ", voronoi.triangle_edges_coordinates)
+	print ("vertices[c]: ", _grid.vertices["c"])
+	print ("Triangle Coordinates: ", "Size(", voronoi.triangle_edges_coordinates.size(), ") Vertices: ", voronoi.triangle_edges_coordinates)
 	var tris: PackedVector2Array
 	for triangle_index in delaunay.triangles:
 		tris.append(points[triangle_index])
+	print ("delaunay.triangles indexes: Size(", delaunay.triangles.size(), ") Indexes: ", delaunay.triangles)
 	print ("Coordinates of delaunay.triangles: Size(", tris.size(), ") Coords: ", tris)
 	print ("Points on the convex hull: ", delaunay.hull)
 	print ("Coordinates on the convex hull: ", voronoi.hull_coordinates)
+	print ("_halfedges: ", delaunay._halfedges)	
+	
 
 	# Print out the coordinates of the triangle. Each triangle will be made up of three points
 	# They are grouped in bracketed groups of three.
@@ -76,13 +81,25 @@ func print_triangles_data(points: PackedVector2Array, delaunay: Delaunator, voro
 #
 func print_voronoi_cell_data(points: PackedVector2Array, delaunay: Delaunator, voronoi: Voronoi):
 	
-	print ("Total number of voronoi cells: ", voronoi.voronoi_cell_sites.size())
-	print ("Voronoi cell site indexes: ",  voronoi.voronoi_cell_sites, "\n")
+	print ("Total number of voronoi cells: ", voronoi.voronoi_cell_dict.size())
+	#print ("Voronoi cell site indexes: ",  voronoi.voronoi_cell_sites, "\n")
+	print ("Voronoi Points: ", points)
 	print ("Voronoi cell sites in Voronoi.cells[c]")
+	#print ("Voronoi Cell Indexes: ", voronoi.voronoi_site_indexes)
 	print("Printing Voronoi Cells Dictionary: Key (ID) and Vertices (Corners) for the Voronoi Cell")
-	for key in voronoi.voronoi_cell_dict:
-		print ("Cell ID: (", key, ") ", "Cell Site: ", voronoi.voronoi_cell_sites[key], " Cell Vertices: ", voronoi.voronoi_cell_dict[key])
+	#for key in voronoi.voronoi_cell_dict:
+		#print ("Cell ID: (", key, ") ", "Cell Site: ", voronoi.voronoi_cell_sites[key], " Cell Vertices: ", voronoi.voronoi_cell_dict[key])
 
+	for key in voronoi.voronoi_cell_dict:
+		print ("Cell ID: (", key, ") ", "Cell Site: ", " Cell Vertices: ", voronoi.voronoi_cell_dict[key])
+
+func print_triangle_edges_data(voronoi: Voronoi):
+	print ("Total number of edges: ", voronoi.triangle_edge_coordinates.size())
+	print ("Printing edge coordinates, from:to");
+	for key in voronoi.triangle_edge_coordinates:
+		#print ("Edge ID: (", key, ") ", "Edges: ", voronoi.triangle_edges[key])
+		print ("Edge ID: (", key, ") ", "From: ", voronoi.triangle_edge_coordinates[key][0], " To: ", voronoi.triangle_edge_coordinates[key][1])
+		print ("Edge ID: (", key, ") ", "From: ", voronoi.triangle_edge_indexes[key][0], " To: ", voronoi.triangle_edge_indexes[key][1])
 # Matches vertices["v"] dictionary.
 # this.vertices.v[t] = this.trianglesAdjacentToTriangle(t);
 # ATTENTION

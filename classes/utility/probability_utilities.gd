@@ -1,15 +1,19 @@
+#
+## Code from Azgaar's Fantasy Map Generator
+## Ported from https://github.com/Azgaar/Fantasy-Map-Generator
+#
+# https://github.com/Azgaar/Fantasy-Map-Generator/blob/5bb33311fba48ed83f797c77779dbb909d6e1958/utils/probabilityUtils.js
+#
 class_name ProbabilityUtilities
-
-
-
-# Get a number from a string in the format "1-3", "2", or "0.5"
-# This function takes a number (float or integer) or range which is passed in as a 
-# string and returns a random float.
-# For ranges, the range will be in the form of "90-99", a lower and uppper range separated
-# by a "-" (dash),
-# IN this case, we separate the lower and upper values and use them tro generate a random float 
-# between the two values.
-# For all other cases, we return a random float based on the number passed in.
+## Get a number from a string in the format "1-3", "2", or "0.5"
+## 
+## This function takes a number (float or integer) or range which is passed in as a 
+## string and returns a random float.
+## For ranges, the range will be in the form of "90-99", a lower and uppper range separated
+## by a "-" (dash),
+## In this case, we separate the lower and upper values and use them tro generate a random float 
+## between the two values.
+## For all other cases, we return a random float based on the number passed in.
 static func get_number_in_range(r: String) -> float:
 	
 	# Check to make sure what is passed in is a string. Not sure this is 
@@ -36,23 +40,23 @@ static func get_number_in_range(r: String) -> float:
 	#if r[0] == "-" or not r[0].is_valid_int():
 		#r = r.substr(1)
 
-	# If we are here, then we should ahve a range, like 1 - 10. We look for the 
-	# dash and then extract the lower and upwer values.
-	var range = r.split("-")
-	if range.size() == 0:
-		print("Cannot parse the number. Check the format", range)
-		return 0
+	# If we are here, then we should have a range, like 1 - 10. We look for the 
+	# dash and then extract the lower and upper values.
+	var numbered_range: PackedStringArray = r.split("-")
+	if numbered_range.size() == 0:
+		print("Cannot parse the number. Check the format", numbered_range)
+		return 0.0
 
 	#var count: float = randf_range(float(range[0]) * sign, float(range[1]))
 	# Create a random value between the lower and upper range
 	# What this cannot handle is a negative range. I don't thnk we need
 	# that. May need to fix if in fact we want to handle negative ranges.
-	var count: float = randf_range(float(range[0]), float(range[1]))
-	if is_nan(count) or count < 0:
-		print("Cannot parse number. Check the format:", range)
-		return 0
+	var number_in_range: float = randf_range(float(numbered_range[0]), float(numbered_range[1]))
+	if is_nan(number_in_range) or number_in_range< 0.0:
+		print("Cannot parse number. Check the format:", numbered_range)
+		return 0.0
 
-	return count	
+	return number_in_range	
 	
 
 static func P(probability) -> float:
@@ -61,3 +65,16 @@ static func P(probability) -> float:
 	if probability <= 0:
 		return false
 	return randf() < probability
+
+static func rand(min = null, max = null):
+	# If neither parameter is provided, return a float between 0 and 1.
+	if min == null and max == null:
+		return randf()
+	# If only one parameter is provided, treat it as the maximum.
+	if max == null:
+		max = min
+		min = 0
+	# Calculate a random integer in the range [min, max].
+	# randf() returns a float between 0 and 1.
+	# Multiply by (max - min + 1) to cover the range of integers and floor the result.
+	return int(floor(randf() * (max - min + 1))) + min

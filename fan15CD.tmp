@@ -1,0 +1,40 @@
+[gd_scene load_steps=2 format=3 uid="uid://cxglm7a4qsn7q"]
+
+[ext_resource type="Script" path="res://main.gd" id="1_l63tg"]
+
+[node name="FantasyMapSandbox" type="Node2D"]
+script = ExtResource("1_l63tg")
+random_points = null
+poisson_distribution = null
+jittered_grid = true
+default_seed_points = 6
+use_mouse_to_draw = null
+_draw_triangles = null
+_draw_filled_in_triangles = null
+_draw_triangle_edges = null
+_draw_triangle_edges_with_arrows = null
+_draw_voronoi_cells = null
+_draw_voronoi_cells_convex_hull = null
+_draw_voronoi_edges = null
+_draw_points = null
+_draw_centroids = null
+_draw_clickable_voronoi = null
+debug_mode = null
+sampling_min_distance = null
+sampling_poisson_max_tries = null
+area = Rect2(0, 0, 1152, 648)
+_draw_triangle_circumcenters = null
+_draw_triangle_centers = null
+_draw_triangle_incenters = null
+_draw_triangle_circumcenters_circles = null
+debug_triangles = null
+debug_voronoi_cells = null
+debug_adjacent_triangles = null
+debug_triangle_edges = null
+draw_voronoi_elevation = null
+_draw_voronoi_cells_id = null
+_draw_points_location_data = null
+_draw_triangle_position_data = null
+triangle_position_data = null
+draw_neighbor_lines = null
+_draw_edges_around_point = null

@@ -45,7 +45,7 @@ const EPSILON = pow(2, -52)
 
 #var edge_stack = []
 var edge_stack := PackedFloat32Array()
-# coords is an array of inpuyt cooridnates in the form of [x0, y0, x1, y1, ...]
+# coords is an array of input cooridnates in the form of [x0, y0, x1, y1, ...]
 var coords := PackedFloat32Array()
 
 # stores all of the half-edges that define thr triangles. Each triangle will have its own half-edge 

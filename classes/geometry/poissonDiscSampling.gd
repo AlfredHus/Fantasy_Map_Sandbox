@@ -91,11 +91,12 @@ func generate_points_on_image(min_radius:float, max_radius:float, image_texture_
 				break
 		if not sample_accepted:
 			spawn_points.remove_at(spawn_index)
-	
-	return {
-		"points": points,
-		"radii": radii
-	}
+	#
+	#return {
+		#"points": points,
+		#"radii": radii
+	#}
+	return points
 
 func __is_valid_sample(sample: Vector2, sample_radius:float, points:Array, radii:Array, region_shape, region_bbox, grid, cols, rows, transpose, cell_size_scaled) -> bool:
 	if __is_point_in_region(sample, region_shape, region_bbox):
@@ -238,23 +239,23 @@ func __map(value:float, from_start:float = 0, from_end:float = 1, to_start:float
 ###################################################################################################
 # Add points along map edge to pseudo-clip voronoi cells
 # URL: https://github.com/Azgaar/Fantasy-Map-Generator/blob/23f36c3210d583c32760ddde3c5e6c65ecc8ab52/utils/graphUtils.js
-func add_boundary_points(area: Rect2, spacing: float) -> PackedVector2Array:
-	var offset: int = roundi(-1 * spacing)
-	var b_spacing: int = spacing * 2
- 
-	var width: int = area.size.x - offset * 2
-	var height: int = area.size.y- offset * 2
-	var number_x: int = int(ceil(width / b_spacing)) - 1
-	var number_y: int = int(ceil(height / b_spacing)) - 1
-
-	for i in range(0.5, number_x):
-		var x: int = int(ceil((width * i) / number_x + offset))
-		boundary_points.append(Vector2(x, offset))
-		boundary_points.append(Vector2(x, height + offset))
-
-	for i in range(0.5, number_y):
-		var y: int = int(ceil((height * i) / number_y + offset))
-		boundary_points.append(Vector2(offset, y))
-		boundary_points.append(Vector2(width + offset, y))
-
-	return boundary_points		
+#func add_boundary_points(area: Rect2, spacing: float) -> PackedVector2Array:
+	#var offset: int = roundi(-1 * spacing)
+	#var b_spacing: int = spacing * 2
+ #
+	#var width: int = area.size.x - offset * 2
+	#var height: int = area.size.y- offset * 2
+	#var number_x: int = int(ceil(width / b_spacing)) - 1
+	#var number_y: int = int(ceil(height / b_spacing)) - 1
+#
+	#for i in range(0.5, number_x):
+		#var x: int = int(ceil((width * i) / number_x + offset))
+		#boundary_points.append(Vector2(x, offset))
+		#boundary_points.append(Vector2(x, height + offset))
+#
+	#for i in range(0.5, number_y):
+		#var y: int = int(ceil((height * i) / number_y + offset))
+		#boundary_points.append(Vector2(offset, y))
+		#boundary_points.append(Vector2(width + offset, y))
+#
+	#return boundary_points		
