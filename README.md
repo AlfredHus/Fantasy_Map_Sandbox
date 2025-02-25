@@ -5,8 +5,9 @@ Since it is a learning project, the code is messy and in a constant state of cha
 
 # License
 Any original code from me uses the MIT license. 
+https://github.com/AlfredHus/Fantasy-Map_Sandbox/tree/main?tab=MIT-1-ov-file#readme
 
-For any open source code that is used, their license is applicable. I have tried to keep the licenses compabatible. 
+For any open source code that is used, their license is applicable.
 
 # Learning Sites
 Listed here are the sites that provided the learning opportunities.
