@@ -11,7 +11,7 @@ For any open source code that is used, their license is applicable.
 
 # Learning Sites
 Listed here are the sites that provided the learning opportunities.
-1.Red Blob Games - https://www.redblobgames.com
+1.[Red Blob Games](https://www.redblobgames.com)
 A whole lot of really good infomration on a variety of topics specific to maps, hexes, voronoi, etc.
 
 # Attribution
