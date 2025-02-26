@@ -220,7 +220,6 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 		#vertices["c"][t] = points_of_triangle(points, delaunay, t)  
 			grid.vertices["c"][t] = points_of_triangle_1(points, delaunay, t)            
 	
-	print ("grid.vertices[c][t]: ", grid.vertices["c"])
 	setup_voronoi_cells(points, delaunay)
 	associate_sites_with_voronoi_cell(points)
 	setup_triangle_centers(points, delaunay)

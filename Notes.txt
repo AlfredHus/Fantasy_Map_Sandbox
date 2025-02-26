@@ -28,3 +28,14 @@ Ternary expressions
 https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_basics.html#statements-and-control-flow
 var x = (value) if (expression) else (value)
 y += 3 if y < 10 else -1
+
+Git Commands to remember
+- Use this if I create a repository on GitHub, delete the repository and try to create a new one 
+  from git. This deals with the GitHub error when I try to push the new repository 
+  "The repository does not seem to exist anymore. You may not have [enter access, or it may 
+  have been deleted or renamed"
+$ git remote -v
+> origin    git@git-server/octocat/hello-world.git (fetch)
+> origin    git@git-server/octocat/hello-world.git (push)
+# Remove existing remotes
+$ git remote remove origin

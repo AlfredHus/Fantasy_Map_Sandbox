@@ -60,6 +60,7 @@ const MapRegionScene := preload("res://map_region.tscn")
 @export var _poisson_distribution: bool = false
 ## Use jittered points when creating a Azgaar style fantasy map.
 @export var _jittered_grid: bool = false
+## Use this for getting the points from an image. NOTE: Does not currently work.
 @export var _points_from_image: bool = false
 ## When using random points, you need to set the seed to the number of points
 @export var _default_seed_points: int = 100
@@ -1298,8 +1299,8 @@ func draw_voronoi_feature_map():
 	print ("Print feature map Values: ", grid.pack.f)
 	for p in grid.points_n:
 		# Draw the voronoi cell with the feature color
-		#feature = grid.f[key]
-		feature = grid.pack.f[p]
+		feature = grid.f[p]
+		#feature = grid.pack.f[p]
 		#var distance_field = grid.t[key]
 		var distance_field = grid.t[p]
 		match feature:

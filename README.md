@@ -1,7 +1,7 @@
 # Overview
 The Fantasy Map Sandbox is a work in progress (WIP) for me to learn Godot and GDscript. This is being done by creating Fantasy Maps using a variety of techniques. There is alot of usage of other Open Source projects which are listed in the Attributions section of the README.
 
-Since it is a learning project, the code is messy, has alot of code I stopped using and haven't removed yet, code that may raise an eyebrow or tow and the whole thing in a constant state of change. I also have alot of inline comments to help me remember things I did and to explain to my future self why I did something.
+Since it is a learning project, the code is messy, has alot of code I stopped using and haven't removed yet, code that may raise an eyebrow or two and the whole thing in a constant state of change. I also have alot of inline comments to help me remember things I did and to explain to my future self why I did something.
 
 # License
 Any original code from me uses the MIT license: https://github.com/AlfredHus/Fantasy-Map_Sandbox/tree/main?tab=MIT-1-ov-file#readme
@@ -37,8 +37,10 @@ lineclip: Port of javascript: https://github.com/mapbox/lineclip
 Polylabel: Code ported from: https://github.com/mapbox/polylabel
    Port of the code to gdscript. Used some of the test code as well
 ## Azgaar Fantasy Map Generator (License MIT)
-Port of some of Azgaars Fantasy Map Code: https://github.com/Azgaar/Fantasy-Map-Generator
+	Port of some of Azgaars Fantasy Map Code: https://github.com/Azgaar/Fantasy-Map-Generator
 ## RedBlobGames Mapgen4 (License: Apache-2.0)
-Port of some of the Mapgen code: https://github.com/redblobgames/mapgen4/blob/master/dual-mesh/create.ts
+	Port of some of the Mapgen code: https://github.com/redblobgames/mapgen4/blob/master/dual-mesh/create.ts
 ## D3.Polygon  (License: ICS)
-Port of some of the D3 Polygon code: https://d3js.org/d3-polygon, specifically area and centroid.
+	Port of some of the D3 Polygon code: https://d3js.org/d3-polygon, specifically area and centroid.
+## ClickableMap (MIT License)
+	A clickable voronoi cells implementation: https://github.com/t-karcher/ClickableMap

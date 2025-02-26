@@ -23,23 +23,24 @@ extends Node
 ## Does not include the boundary points.
 var points: PackedVector2Array 
 ## Contains all of the points, including the boundary points. 
-var all_points: PackedVector2Array 
+#var all_points: PackedVector2Array 
 ## The interior boundary are on the inside of the grid.
 ##  Off-canvas points coordinates used to cut the diagram approximately by 
 ## canvas edges.  Performs a form of pseudo-clipping of the polygons
 ## (voronoi cells)
-## In Azgaars code, it is called boundary.
+## This is from Amits Mapgen program. 
 var interior_boundary_points: PackedVector2Array 
 ## The exterior boundary points are outside of the grid. Used to
-## pseudo-clip the polygons. This is from Amits Mapgen program. 
+## pseudo-clip the polygons. 6 In Azgaars code, it is called boundary.
 var exterior_boundary_points: PackedVector2Array 
 ## The number of cells to generate. Used for jittering and random.
 ## Not used for the initial point seeding or poisson.
 ## initial count of cells/points requested for map creation. Used to define 
 ## spacing and place points on a jittered square grid. 
 ## Actual number of cells is defined by the number points able to place on a 
-## square grid. Default cellsDesired is 10 000, maximum - 100 000, 
-## minimal - 1 000
+## square grid. When creating a Azgaar Fanbasy Map, range is Default 
+## cellsDesired is 10 000, maximum - 100 000,  minimal - 1 000
+## When using random generation, any value is accepted.
 var cells_desired: int
 ## number of cells in column (considers the spacing)
 var cells_x: int
@@ -50,7 +51,8 @@ var width: int
 ## Height of the display area
 var height: int
 
-# These set of variables are set up by the Features class
+# These set of variables are set up by the Features class used in Azgaar Fantasy
+# Map generation
 ## Distance field from water level. 
 ## 1, 2, .... - land cells  
 ## -1, -2, ... - water cells

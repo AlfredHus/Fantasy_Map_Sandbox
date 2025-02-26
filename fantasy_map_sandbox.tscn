@@ -9,4 +9,4 @@ _default_seed_points = 1000
 _cells_desired = 1000
 area = Rect2(0, 0, 1152, 648)
 selected_world = 9
-_draw_fantasy_map_elevations = true
+_draw_feature_map = true
