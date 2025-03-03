@@ -38,6 +38,7 @@ func _init(grid: Grid, voronoi: Voronoi, heightmap_type: String):
 
 	generate(heightmap_type)
 	grid.heights = heights
+	grid.cells["h"] = heights
 	
 	
 # Called when the node enters the scene tree for the first time.
@@ -67,7 +68,6 @@ func from_template(id: String) -> void:
 	# TODO: Add better error handling
 	if steps.is_empty():
 		print("Heightmap template: no steps. Template: %s. Steps: %s" % [id, steps])
-		#return []
 	# A template has a set of steps that are used to construct the map, for example, "Smooth", 
 	# Hill", "Pit". Eeach of these elements consist of a set of paramters that define the step.
 	for step in steps:
@@ -84,8 +84,6 @@ func from_template(id: String) -> void:
 		# approach is how the source code did it, so for now we will keep the
 		# same approach.
 		add_step.callv(elements)
-
-	#return heights
 
 
 # A modifier for the blobs that are layed down during the height map creation
@@ -197,8 +195,6 @@ func add_one_hill(height: String, range_x: String, range_y: String):
 		# Get the initial start point that will be used to begin the height 
 		# map population
 
-		#start = _grid.find_grid_center_point()
-	
 		start = _grid.find_grid_cell(x, y)
 		
 		var start1 = _grid.find_grid_cell_index(x, y)

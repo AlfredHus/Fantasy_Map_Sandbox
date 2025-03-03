@@ -78,3 +78,21 @@ static func rand(min = null, max = null):
 	# randf() returns a float between 0 and 1.
 	# Multiply by (max - min + 1) to cover the range of integers and floor the result.
 	return int(floor(randf() * (max - min + 1))) + min
+	
+# Random Gaussian number generator
+# expected - expected value
+# deviation - standard deviation
+# minimum - minimum value
+# maximum: - maximum value
+# round_to - round value to n decimals
+# Returns random number
+static func gauss(expected: float = 100.0, deviation: float = 30.0, minimum: int = 0, maximum: int = 300, round_to: int = 0):
+	# randf is for normally distributed random numbers
+	var random_value = randfn(expected, deviation)  # Gaussian distribution
+	var min_max_value = GeneralUtilities.minmax(random_value, minimum, maximum)
+	var rounded_value = GeneralUtilities.rn(min_max_value, round_to)
+	
+	return rounded_value
+	
+	# Returned as one line. Breakdown above is for easier debugging
+	# return GeneralUtilities.rn(GeneralUtilities.minmax(randfn(expected, deviation), min, max), round_to);

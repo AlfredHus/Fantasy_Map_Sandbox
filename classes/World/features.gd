@@ -66,7 +66,8 @@ func _init(grid: Grid):
 	# For now, this is a workaround. Array Array ( PackedInt32Array from )
 	#var heights := Array(grid.heights)
 	# The number of cells does not include the boundary points
-	_heights = grid.heights.duplicate()
+	#_heights = grid.heights.duplicate()
+	_heights = grid.cells["h"].duplicate()
 	
 	#var cells_number: int = grid.points_n
 	#_cells_number = grid.i.size()
@@ -114,6 +115,8 @@ func markup_grid(grid: Grid) -> void:
 	# grid.cells.f
 	var _feature_ids: Array[int] = []
 	_feature_ids.resize(_cells_number)
+	_features = [0]
+	
 	while queue[0] != -1:
 		counter += 1 # TEMP
 		var first_cell: int = queue[0]
@@ -175,9 +178,11 @@ func markup_grid(grid: Grid) -> void:
 # 1, 2, .... - land cells  
 # -1, -2, ... - water cells
 # 0 - unmarked cell
-	grid.t = _distance_field
+	#grid.t = _distance_field
+	grid.cells["t"] = _distance_field
 # indexes of the features
-	grid.f = _feature_ids
+	#grid.f = _feature_ids
+	grid.cells["f"] = _feature_ids
 	grid.features = _features
 	#print ("Features: ", _features)
 	#print ("Features ID: ", grid.f)

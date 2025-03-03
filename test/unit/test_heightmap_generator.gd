@@ -20,7 +20,7 @@ func  before_all():
 	grid = Grid.new(1000, area)
 	points = grid.set_jittered_grid_points()
 	delaunay = Delaunator.new(points)
-	voronoi = Voronoi.new(points,grid, delaunay, area, grid.points_n)
+	voronoi = Voronoi.new(points,grid, delaunay, area)
 	var world_selected: String = "volcano"
 
 	heightmap_generator = HeightMapGenerator.new(grid, voronoi, world_selected)

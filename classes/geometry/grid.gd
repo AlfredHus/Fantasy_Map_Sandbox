@@ -57,11 +57,11 @@ var height: int
 ## 1, 2, .... - land cells  
 ## -1, -2, ... - water cells
 ## 0 - unmarked cell
-var t: Array[int] = []
+#var t: Array[int] = []
 # indexes of the features
-var f: Array[int] = []
+#var f: Array[int] = []
 # The indexes for the points (does not include boundary points)
-var i: Array[int] = []
+#var i: Array[int] = []
 ## a array of dictionaries for all enclosed entities: islands, lakes and oceans
 ## i: integer - feature id starting from 1
 ## land: boolean - true if feature is land (height >= 20)
@@ -74,12 +74,15 @@ var i: Array[int] = []
 var features = []
 
 # Features represent separate locked areas like islands, lakes and oceans.
-var feature: Dictionary = {
+# NOTE: The features array is built dynamically. The commented out features
+# dictionary below is just there so I know what elements arein the 
+# features dictionary
+#var feature: Dictionary = {
 	# i: integer -  feature id starting from 1
 	# land: bool - true if feature is land (height >= 20)
 	# border: bool - true if feature touches map border (used to separate lakes from oceans)
 	# type: String - feature type, can be "ocean", "island" or `"lake"
-}
+#}
 
 var haven = []
 var harbor = []
@@ -187,7 +190,8 @@ func set_jittered_grid_points() -> PackedVector2Array:
 	
 	# set the indexes of the points. Used in the azgaar code only
 	for x in range(points.size()):
-		i.append(x)
+		#i.append(x)
+		cells["i"].append(x)
 	points_n = points.size()
 	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, _spacing)
 	for i in exterior_boundary_points:

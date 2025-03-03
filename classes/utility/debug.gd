@@ -1,12 +1,13 @@
-# Used to support debugging the application.
 class_name Debug
 extends Node
+## Used to support debugging the application. 
+## Provides functions that can print out the various data structures to the
+## console.
 
 var _grid: Grid
 
 func _init(grid: Grid):
 	_grid = grid
-	pass
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:

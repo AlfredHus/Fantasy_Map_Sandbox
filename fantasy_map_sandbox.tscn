@@ -8,5 +8,5 @@ _jittered_grid = true
 _default_seed_points = 1000
 _cells_desired = 1000
 area = Rect2(0, 0, 1152, 648)
-selected_world = 9
-_draw_feature_map = true
+_selected_world = 2
+_draw_fantasy_map_elevations = true

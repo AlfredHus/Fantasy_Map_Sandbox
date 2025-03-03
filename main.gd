@@ -119,7 +119,7 @@ const MapRegionScene := preload("res://map_region.tscn")
 ## Lets you choose the type of Azgaar style map template to use
 @export_enum("volcano", "highIsland", "lowIsland", "continents", "archipelago", "atoll", \
 				"mediterranean", "peninsula", "pangea", "isthmus", "shattered","taklamakan", \
-			 	"oldWorld", "fractious") var selected_world
+			 	"oldWorld", "fractious") var _selected_world
 ## To generate the elevations, you need to also select "Jittered Grid"
 @export var _draw_fantasy_map_elevations: bool = false
 @export var _draw_feature_map: bool = false
@@ -158,6 +158,14 @@ enum TrianglePositionData {CORNERS = 1, MID_POINTS = 2, BOTH = 3}
 ## Set to hightlight edges around a point
 @export var _draw_edges_around_point: bool = false
 
+# In Azgaars code, configuration values are extract from the UI input vales
+# These values mimic that.
+@export_group("Configuration Values")
+## Used to set the lake deep depressions as defined in the Lakes class
+@export var _lake_elevation_limit_output: int = 20
+
+
+
 
 ############################### Public Variables ########################################
 
@@ -178,6 +186,10 @@ var elevation: Elevation
 var grid: Grid
 var heightmap_generator: HeightMapGenerator
 var features: Features
+var lakes: Lakes
+var map: Map
+var temperature: Temperature
+var precipitation: Precipitation
 #var voronoi_cells:= PackedVector2Array()
 #var coordinates := PackedVector2Array()
 var size: Vector2i
@@ -340,7 +352,7 @@ func _ready()  -> void:
 	elevation.generate_elevation(3)
 	#elevation.generate_elevation_from_image()
 	var world_selected: String = "volcano" # default is volcano
-	match selected_world:
+	match _selected_world:
 		world_choices.VOLCANO:
 			world_selected = "volcano"
 		world_choices.HIGH_ISLAND:
@@ -372,7 +384,7 @@ func _ready()  -> void:
 	
 	# Generate Azgaars Fantasy Map
 	#if _jittered_grid or _poisson_distribution == true: generate_fantasy_map(world_selected)
-	if _jittered_grid == true: generate_fantasy_map(world_selected)
+	if _jittered_grid == true: generate_azgaar_style_fantasy_map(world_selected)
 	
 
 	
@@ -516,18 +528,26 @@ func calculateVoronoi():
 	voronoi = Voronoi.new(points, grid, delaunay, area)
 	
 # This function is to isolate the implementaton of Azgaars Fantasy Map
-func generate_fantasy_map(world_selected: String):
+func generate_azgaar_style_fantasy_map(world_selected: String):
 		heightmap_generator = HeightMapGenerator.new(grid, voronoi, world_selected)
 		features = Features.new(grid)
 		features.markup_grid(grid)
+		lakes = Lakes.new()
+		map = Map.new()
+		temperature = Temperature.new()
+		precipitation = Precipitation.new()
+		lakes.add_lakes_in_deep_depression(grid, _lake_elevation_limit_output)
+		lakes.open_near_sea_lakes(grid, world_selected)
+		map.define_map_size(world_selected, grid)
+		map.calculate_map_coordinates(grid)
+		temperature.calculate_temperatures(grid, map)
+		precipitation.generate_precipitation(grid, map)
 		#features.markup_grid_packed(grid)
 		#features.specify(grid)
 		#grid.print_min_max_values()
-		var grid_f_size = grid.f.size()
-		print ("Size of grid.f: ", grid.f.size())
+		#var grid_f_size = grid.f.size()
+		#print ("Size of grid.f: ", grid.f.size())
 		pass
-
-
 
 
 # Code taken from Godot documenation to start to undersdtand how the mouse
@@ -1291,18 +1311,18 @@ func draw_voronoi_feature_map():
 	var feature: int 
 	var font : Font
 	font = ThemeDB.fallback_font
-	var grid_f_size = grid.f.size()
+	#var grid_f_size = grid.f.size()
+	var grid_f_size = grid.cells["f"].size()
+
 	
-	var p_size = points.size()
-	#for key in voronoi_cell_dict.keys():
-	
-	print ("Print feature map Values: ", grid.pack.f)
 	for p in grid.points_n:
 		# Draw the voronoi cell with the feature color
-		feature = grid.f[p]
+		#feature = grid.f[p]
+		feature = grid.cells["f"][p]
 		#feature = grid.pack.f[p]
 		#var distance_field = grid.t[key]
-		var distance_field = grid.t[p]
+		#var distance_field = grid.t[p]
+		var distance_field = grid.cells["t"][p]
 		match feature:
 			features.DEEPER_LAND: # 3
 				color = Color.DARK_GREEN
@@ -1318,7 +1338,7 @@ func draw_voronoi_feature_map():
 				color = Color.DARK_BLUE
 			_:
 				color = Color.WHITE # No Value set.
-		#draw_polygon(voronoi_cell_dict[key], PackedColorArray([color]))
+				
 		draw_polygon(voronoi_cell_dict[p], PackedColorArray([color]))		
 		
 		# DEBUG CODE 
@@ -1334,9 +1354,7 @@ func draw_voronoi_feature_map():
 		draw_string(font, Vector2(result[0], result[1]), str(feature), 0, -1, 8, Color.BLACK)
 		#draw_string(font, Vector2(result[0], result[1]), str(distance_field), 0, -1, 8, Color.BLACK)
 				
-			
-		
-		
+	
 func draw_water_land_map():
 	var voronoi_cell_dict: Dictionary = voronoi.get_voronoi_cells()	
 	var color: Color

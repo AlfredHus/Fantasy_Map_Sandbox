@@ -3,14 +3,12 @@ extends Node
 #
 ## Port to Godot 4.1.3 - Tom Blackwell - 18 Mar 2024
 ## Source URL: https://github.com/Volts-s/Delaunator-GDScript-4
-#
-
-
-
-############################### Public Variables ########################################
+## Some code from Azgaars Voronoi class.
+## Source URL: https://github.com/Azgaar/Fantasy-Map-Generator/blob/master/modules/voronoi.js
 
 ############################### Private Variables ########################################
 
+############################### Public Variables ########################################
 #var voronoi_cells:= PackedVector2Array()
 
 # A dictionary that contains a key which is the ID of the Voronoi cell and
@@ -19,8 +17,6 @@ extends Node
 var voronoi_cell_dict_original: Dictionary  = {}
 var voronoi_cell_dict: Dictionary  = {}
 var voronoi_cell_dict_indexes: Dictionary = {}
-
-
 
 # An array that contains all of the unique voronoi vertices (coordinates 
 # or corners) of each Voronoi cell. This is different than voronoi_cell_dict
@@ -51,21 +47,15 @@ var voronoi_vertices:= PackedVector2Array()
 # An array of the centroids for the Voronoi cells. NOTE: This is not being used
 # currently for anything, so it may be redundant.
 var centroids := PackedVector2Array()
-
 var centroids1 := PackedVector2Array()
 
 # The boundary of the voronoi diagram (a Rect2)
 var boundary: Rect2
-
 var triangle_centers: PackedVector2Array = PackedVector2Array()
-
 var triangle_edges_coordinates := PackedVector2Array()
-
 var tris: PackedVector2Array
-
+# The number of points not including the boundary points.
 var points_n: int
-
-
 # Holds the  coordinates and the indexs for adjacent triangles
 var adjacent_triangle_edges_coordinates := PackedVector2Array()
 var adjacent_triangle_edges: Array = []
@@ -106,118 +96,82 @@ var triangle_edge_indexes: Dictionary = {}
 
 
 func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundary: Rect2) -> void:
+	# The boundary [width,height] of the grid that the 
+	# voronoi cells are contained in.
 	self.boundary = boundary
+	# The number of points not including the exterior boundary points.
 	self.points_n = grid.points_n
 
-	# Size the dictionary to the total number of points which are the samew
-	# same as the voronoi sites
-	#cells["v"].resize(points.size())
-	#cells["c"].resize(points.size())
-	#cells["b"].resize(points.size())
-	
-	# Size the dictionary to the total number of triangles
-	#vertices["p"].resize(delaunay.triangles.size() / 3)
-	#vertices["v"].resize(delaunay.triangles.size() / 3)
-	#vertices["c"].resize(delaunay.triangles.size() / 3)
-	
-	
-	# Size the dictionary to the total number of points which are the samew
-	# same as the voronoi sites
-	var p_size = points.size()
-	#var points_n = grid.points_n
+	# Size the dictionary to the total number of points which are the same
+	# same as the voronoi sites (
 	grid.cells["v"].resize(points_n)
 	grid.cells["c"].resize(points_n)
 	grid.cells["b"].resize(points_n)
-	
 	
 	# Size the dictionary to the total number of triangles
 	grid.vertices["p"].resize(delaunay.triangles.size() / 3)
 	grid.vertices["v"].resize(delaunay.triangles.size() / 3)
 	grid.vertices["c"].resize(delaunay.triangles.size() / 3)
-	
-	
+		
 	var p_temp: PackedInt32Array
 	var e_temp: PackedInt32Array
 	
-	var seen = []
-
-	# for every triangle vertiex
 	var count = 0
 	var cell_points: PackedVector2Array
 	
-	#points_n = grid.all_points
 	# The next code block iterates through all of the triangle indexes as 
 	# defined in delaunay.triangle to build the dictionarys, using the
 	# the triangle index as a index into the dictionary array. 
-	#print ("Triangles: [", delaunay.triangles.size(), "] ", delaunay.triangles)
 	for e in delaunay.triangles.size():
 		e_temp.append(e) # DEBUG
 		# This line is getting the edge index of the delaunay.triangles, except
-		# the triangle points are in a differentorder. For example, if the first
+		# the triangle points are in a different order. For example, if the first
 		# triangle triplet in delaunay.triangle is "11, 16, 12", then this
 		# line is getting the triplet as "16, 12, 11 because it gets the 
 		# first triplet as the next_half_edge, which is "16",not "11", so it
 		# gets "16, then "12", then "11".
-		# Not sure why it is done this way as pooposed to just using the 
-		# same triplet pairing as defined in delaunay.triangles.
-		#var p: int = delaunay.triangles[next_half_edge(e)]
+
 		# The code then uses each index element (that is in a different order 
 		# from delaunay.triangles as a index in each of the dictionaries
 		# to store the values, so for example, if p = 16, then the values
 		# that are calculated as stored in cells["c"].[16]. If the code had used
 		# the same triplet ordering as defined in delaunay.triangles, then this
-		# would of been cells{"c"].[11].
-		# NOTE: For now. I am going to switch it so that it uses "e" instead
-		# of "next_half_edge(2)" so it is consistent with how the rest
-		# of the voronoi structures store their data.
+		# would of been cells{"c"].[11]..
 		var p: int = delaunay.triangles[next_half_edge(e)]
-		#var p: int = delaunay.triangles[e]
-		#print ("Coord p: ", points[p])
+
 		# If you store p as an array, it will contain the same indexes as 
 		# delaunay.triangles. so p_temp = delaunay.triangles
 		p_temp.append(p) # DEBUG
-		# if p < points.size() and not seen.has(p):
-		#if p < points.size() and not grid.cells["c"][p]:
+
 		if p < points_n and not grid.cells["c"][p]:
-			seen.append(p)
 			# Here we get the edge indexes arount a point (in this case "e")
 			# So we get the edges around edge "1", then edge "2", etc until we 
 			# have iterated through all of the edge indexes in delaunay.triangle
 			var edges = edges_around_point_array(delaunay, e)
-			#print ("===> Indexes for Edge ID:", " from: ", delaunay.triangles[e], " to: ", delaunay.triangles[next_half_edge(e)])
-			
+					
 			# for each element in edges, call triangle_of_edge for each of the 
 			# elements and return the triangle id for that edge. This
 			# will create a new array and assign it a array element in the 
 			# dictionary at element index "p"
 			
 			# cell vertices
-			#cells["v"][p] =  edges.map(func(e): return triangle_of_edge(e)) # cell: adjacent vertex
+			# Javascript Code: this.cells.v[p] = edges.map(e => this.triangleOfEdge(e)); 
 			grid.cells["v"][p] =  edges.map(func(e): return triangle_of_edge(e)) # cell: adjacent vertex
+			#Javascript Code:  this.cells.c[p] = edges.map(e => this.delaunay.triangles[e]).filter(c => c < this.pointsN)
 			# adjacent cells
-			#cells["c"][p] =  edges.map(func(e): return delaunay.triangles[e]).filter(func(c): return c < points.size())				
-			#grid.cells["c"][p] =  edges.map(func(e): return delaunay.triangles[e]).filter(func(c): return c < points.size())
 			grid.cells["c"][p] =  edges.map(func(e): return delaunay.triangles[e]).filter(func(c): return c < points_n)								
 			
+			# Javasccript Code:  this.cells.b[p] = edges.length > this.cells.c[p].length ? 1 : 0
 			# near border cells
-			# NOTE: This is not working at the moment. FIXME
 			grid.cells["b"][p] = 1 if edges.size() >grid.cells["c"][p].size() else 0
-			var e_cells  = edges.size() # TEMP
-			var c_cells = grid.cells["c"][p].size() # TEMP
-			#print ("edges = ", edges, "cells[c] = ", grid.cells["c"][p])
-			#if edges.size() >grid.cells["c"][p].size(): # TEMP
-				#print ("**************************************") 
-			#pass
+			
 		var t = triangle_of_edge(e)
 		# vertex coordinates
-		#vertices["p"][t] = triangle_center(points, delaunay, t) 
 		if (!grid.vertices["p"][t]):  
 			grid.vertices["p"][t] = triangle_center(points, delaunay, t)                   
 		# neighboring vertices
-		#vertices["v"][t] = triangle_adjacent_to_triangle(delaunay, t) 
 			grid.vertices["v"][t] = triangle_adjacent_to_triangle(delaunay, t)
 		# adjacent cells
-		#vertices["c"][t] = points_of_triangle(points, delaunay, t)  
 			grid.vertices["c"][t] = points_of_triangle_1(points, delaunay, t)            
 	
 	setup_voronoi_cells(points, delaunay)
@@ -604,11 +558,7 @@ func points_of_triangle(points: PackedVector2Array, delaunay: Delaunator, t: int
 	var temp_points : Vector2
 	var index : int
 	for e in edges_of_triangle(t):
-		#index = delaunay.triangles[e]
-		#temp_points = points[delaunay.triangles[e]]
 		points_of_triangle.append(points[delaunay.triangles[e]])
-		#points_of_triangle.append(temp_points)
-		#print ("POINTS OF TRIANGLE: ", points_of_triangle)
 	return points_of_triangle
 	
 func points_of_triangle_1(points: PackedVector2Array, delaunay: Delaunator, t: int) -> Array:
@@ -616,11 +566,7 @@ func points_of_triangle_1(points: PackedVector2Array, delaunay: Delaunator, t: i
 	var temp_points : Vector2
 	var index : int
 	for e in edges_of_triangle(t):
-		#index = delaunay.triangles[e]
-		#temp_points = points[delaunay.triangles[e]]
 		points_of_triangle.append(delaunay.triangles[e])
-		#points_of_triangle.append(temp_points)
-		#print ("POINTS OF TRIANGLE: ", points_of_triangle)
 	return points_of_triangle
 
 # Return the vertices for a specific Voronoi Cell
@@ -664,7 +610,7 @@ func associate_sites_with_voronoi_cell(points: PackedVector2Array) -> void:
 # Returns
 # asjacent_triangles: The vertices of the triangles that share half-edges 
 # with triangle "t"
-func triangle_adjacent_to_triangle(delaunay: Delaunator, t: int):
+func triangle_adjacent_to_triangle(delaunay: Delaunator, t: int) -> Array:
 	var adjacent_triangles = []
 	for e in edges_of_triangle(t):
 		var opposite: int = delaunay.halfedges[e]
@@ -686,15 +632,13 @@ func triangles_around_point(delaunay: Delaunator, start: int) -> PackedInt32Arra
 	
 func add_voronoi_vertices (points: PackedVector2Array, delaunay: Delaunator) -> PackedVector2Array:
 	var vertices: PackedVector2Array = PackedVector2Array()
-	#print ("Triangle Size: ", delaunay.triangles.size())
 	for t in delaunay.triangles.size()/3:
-		#print ("Index t: ", t, " triangle center: ", triangle_circumcenter(points, delaunay, t))
 		vertices.append(triangle_circumcenter(points, delaunay, t))
 	return vertices
 
 # Creates a data structure that stores the index of a triangle edge and
 # the from - to coordinate of that edge. The triangle ID is starts at 0 and 
-# increements by one till it hits the size of the triangles. For example, it 
+# increments by one till it hits the size of the triangles. For example, it 
 # would look like this: 
 # 1 -> from: (835.2, 8=600.22) to: (698.2, 432.2)	
 # 2 -> from: (583.2, 800.22) to: (869.2, 343.2), etc

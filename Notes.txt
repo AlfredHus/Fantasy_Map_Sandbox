@@ -39,3 +39,6 @@ $ git remote -v
 > origin    git@git-server/octocat/hello-world.git (push)
 # Remove existing remotes
 $ git remote remove origin
+
+- Add and commit multiple files
+git add . && git commit -m "your message here"
