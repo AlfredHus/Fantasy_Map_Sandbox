@@ -8,7 +8,8 @@ var MAX_PASSABLE_ELEVATION: int = 85
 #  simplest precipitation model
 func generate_precipitation(grid: Grid, map: Map):
 	
-	var wind_directions = {}
+	#var wind_directions = {}
+	var counter = 0
 	
 	grid.cells["prec"].resize(grid.cells["i"].size())
 	grid.cells["prec"].fill(0)
@@ -17,10 +18,8 @@ func generate_precipitation(grid: Grid, map: Map):
 	var prec_input_modifier: float = 123.0 / 100.0
 	var modifier: float = cells_number_modifier * prec_input_modifier
 
-	var westerly = []
-	#westerly.resize(grid.cells["i"].size())
-	var easterly = []
-	#easterly.resize(grid.cells["i"].size())
+	var westerly: Array = []
+	var easterly: Array = []
 	var southerly: int = 0
 	var northerly: int = 0
 	
@@ -37,17 +36,16 @@ func generate_precipitation(grid: Grid, map: Map):
 	var latitude_modifier = [4.0, 2.0, 2.0, 2.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0, 2.0, 2.0, 1.0, 1.0, 1.0, 0.5]
 
 	
-	 # Define wind directions based on latitude and prevailing winds
-	var temp = range(0, grid.cells["i"].size(), grid.cells_x)
-	var i = 0
+	# Define wind directions based on latitude and prevailing winds
+	var i: int = 0
+	# DEBUG: The loop looks like it is working correctly
 	for c in range(0, grid.cells["i"].size(), grid.cells_x):
-		#var c = i  # Start index of the row
-		var lat = map.map_coordinates["latitude_N"] - (float(i) / grid.cells_y) * map.map_coordinates["latitude_T"]
-		var lat_band = floor((abs(lat) - 1.0) / 5.0)
-		var lat_mod = latitude_modifier[lat_band]
+		var lat: float = map.map_coordinates["latitude_N"] - (float(i) / grid.cells_y) * map.map_coordinates["latitude_T"]
+		var lat_band: int = floor((abs(lat) - 1.0) / 5.0)
+		var lat_mod: int = latitude_modifier[lat_band]
 		# 30d tiers from 0 to 5 from N to S
-		var wind_tier = floor((abs(lat - 89.0)) / 30.0) 
-		wind_directions = get_wind_directions(wind_tier)
+		var wind_tier: int = floor((abs(lat - 89.0)) / 30.0) 
+		var wind_directions: Dictionary = get_wind_directions(wind_tier)
 
 		if wind_directions["is_west"]:
 			westerly.append([c, lat_mod, wind_tier])
@@ -62,31 +60,32 @@ func generate_precipitation(grid: Grid, map: Map):
 	# Distribute winds by direction
 	if westerly.size() > 0:
 		pass_wind(westerly, 120.0 * modifier, 1, grid.cells_x, grid, modifier)
+		counter += 1
 	if easterly.size() > 0:
 		pass_wind(easterly, 120.0 * modifier, -1, grid.cells_x, grid, modifier)
-
+		counter += 1
+		
 	var vertT = southerly + northerly
 	if northerly > 0:
-		var bandN = int((abs(map.map_coordinates["latitude_N"]) - 1) / 5)
-		
-		#var lat_modN = latitude_modifier[bandN] if map.map_coordinates["latitude_T"] <= 60 else latitude_modifier.reduce(func(a, b): return a + b) / latitude_modifier.size()
-		var lat_modN = Statistics.mean(latitude_modifier) if map.map_coordinates["latitude_T"] > 60 else latitude_modifier[bandN]
-		var max_precN = (float(northerly) / vertT) * 60.0 * modifier * lat_modN
+		var bandN: int = int((abs(map.map_coordinates["latitude_N"]) - 1) / 5)
+		var lat_modN: float = Statistics.mean(latitude_modifier) if map.map_coordinates["latitude_T"] > 60 else latitude_modifier[bandN]
+		var max_precN: float = (float(northerly) / vertT) * 60.0 * modifier * lat_modN
 		pass_wind(range(0, grid.cells_x), max_precN, grid.cells_x, grid.cells_y, grid, modifier)
+		counter += 1
 
 	if southerly > 0:
-		var bandS = int((abs(map.map_coordinates["latitude_S"]) - 1) / 5)
-		#var lat_modS = latitude_modifier[bandS] if map_coordinates["latT"] <= 60 else latitude_modifier.reduce(func(a, b): return a + b) / latitude_modifier.size()
-		var lat_modS = Statistics.mean(latitude_modifier) if map.map_coordinates["latitude_T"] > 60 else latitude_modifier[bandS]
-		var max_precS = (float(southerly) / vertT) * 60.0 * modifier * lat_modS
-		pass_wind(range(grid.cells["i"].size() - grid.cells_x, grid.cells["i"].size()), max_precS, grid.cells_x, grid.cells_y, grid, modifier)
-
+		var bandS: int = int((abs(map.map_coordinates["latitude_S"]) - 1) / 5)
+		var lat_modS: float = Statistics.mean(latitude_modifier) if map.map_coordinates["latitude_T"] > 60 else latitude_modifier[bandS]
+		var max_precS: float = (float(southerly) / vertT) * 60.0 * modifier * lat_modS
+		pass_wind(range(grid.cells["i"].size() - grid.cells_x, grid.cells["i"].size()), max_precS, -grid.cells_x, grid.cells_y, grid, modifier)
+		counter += 1
+	pass
 	
 func get_wind_directions(tier: int) -> Dictionary:
 	# default options, based on Earth data, In Azgaars code there is a 
 	# dictionary that holds these values in main.js. 
 	var winds: Array = [225, 45, 225, 315, 135, 315]
-	var angle = winds[tier]
+	var angle: int = winds[tier]
 	return {
 		"is_west": angle > 40 and angle < 140,
 		"is_east": angle > 220 and angle < 320,
@@ -94,9 +93,8 @@ func get_wind_directions(tier: int) -> Dictionary:
 		"is_south": angle > 280 or angle < 80
 	}
 	
-func pass_wind(source: Array, max_prec: float, next: int, steps: int, grid: Grid, modifier: float):
-	var max_prec_init = max_prec
-
+func pass_wind(source, max_prec, next, steps, grid, modifier):
+	var max_prec_init: float = max_prec
 	# In the javascript code, "source" can either be an array of 
 	# tuples, [23,3,6]... or a contiguous array, [0,1,2,3,4]
 	# This is the original javascript:
@@ -108,67 +106,88 @@ func pass_wind(source: Array, max_prec: float, next: int, steps: int, grid: Grid
 	# If source is a contigous array and the code tries to access the first
 	# element, it fails since the first is an integer and not an array
 	# This works in javascript, but causes an error in gdscript, so we 
+	# need to make sure we handle both cases explicitly so we don't get
+	# an error
 	for first in source:
-		var cell_index = first if first is int else first[0]
-		var mod = 1.0 if first is int else first[1]
-		
-		#if first[0]:
-		if cell_index != 0:
-			#max_prec = min(max_prec_init * first[1], 255)
-			#first = first[0]
-			max_prec = min(max_prec_init * mod, 255)
-			#first = index  # Ensure first is always an integer
-		# Ensure the index exists in the grid before accessing it
-		if not grid.cells["h"].has(cell_index):
-			continue
+		if first is Array and first.size() > 1:
+			max_prec = min(max_prec_init * first[1], 255)
+			first = first[0]
 
-		# initial water amount
-		#var height_index = first[0] if first is Array else first
-		#var humidity = max_prec - grid.cells["h"][first]
-		var humidity = max_prec - grid.cells["h"][cell_index]
-		#  if first cell in row is too elevated consider wind dry
+		var humidity: float = max_prec - grid.cells["h"][first] # initial water amount
 		if humidity <= 0:
-			continue
+			continue # if first cell in row is too elevated, consider wind dry
 
+		var current: int = first
 		for s in range(steps):
-			#var current = first + (s * next)
-			var current = cell_index + (s * next)
-			
-			# Ensure the current index is valid before accessing it
-			if not grid.cells["temp"].has(current) or not grid.cells["h"].has(current):
-				continue
-			# no flux in permafrost
-			if grid.cells["temp"][current] < -5:
-				continue
-			
-			if grid.cells["h"][current] < 20:
-				# water cell
-				#if grid.cells["h"].has(current + next) and grid.cells["h"][current + next] >= 20:
-				#if grid.cells["h"][current + next] >= 20:
-					##  coastal precipitation
-					#grid.cells["prec"][current + next] += max(humidity / randf_range(10.0, 20.0), 1)
-				if grid.cells["h"].has(current + next) and grid.cells["h"][current + next] >= 20:
-					# Coastal precipitation
-					grid.cells["prec"][current + next] += max(humidity / randf_range(10.0, 20.0), 1)
-				else:
-					# wind gets more humidity passing water cell
-					humidity = min(humidity + 5 * modifier, max_prec)
-					# water cells precipitation (need to correctly pour water through lakes)
-					grid.cells["prec"][current] += 5 * modifier
-				continue
+			#if current < 0 or current >= grid.cells["h"].size():
+				#break # prevent invalid index access
 
-			# land cell
-			var is_passable = grid.cells["h"][current + next] <= MAX_PASSABLE_ELEVATION
+			if grid.cells.temp[current] < -5:
+				continue # no flux in permafrost
+			# In the Azgaar javascript code, "current +  next" is used in the 
+			# arrays as an index.For example, 
+			# "if (cells.h[current + next] >= 20) {" it is possible that 
+			# current _ next results in a out of bounds value. In Javascript
+			# this resuls in an undefined being generated and undefined in 
+			# it statement turns into a falsy which lets the if statement
+			# fail with no out of bounds error being generated.
+			# In gdscript which is strictly typed, this results in an error.
+			# So for this situation, we need to check to see if current + next
+			# is valid, otherwise we ensure that it fails.
+			# Something to remember about how Javascript works when translating
+			# Javascript code to gdscript.
+			var next_index: int = current + next
+			var next_is_valid: bool = next_index >= 0 and next_index < grid.cells["h"].size()
+
+			if grid.cells.h[current] < 20:
+				# Water cell
+				if next_is_valid and grid.cells["h"][next_index] >= 20:
+					grid.cells["prec"][next_index] += max(humidity / randf_range(10, 20), 1) # Coastal precipitation
+					var temp1 = grid.cells["prec"][next_index]
+					#print ("water cell: temp1:", temp1)
+					pass
+				else:
+					humidity = min(humidity + 5 * modifier, max_prec) # Wind gets more humidity passing water cell
+					#if humidity == 0:
+						#print ("Water cell humidity = 0")
+					grid.cells["prec"][current] += 5 * modifier # Water cells precipitation
+					var temp2 = grid.cells["prec"][current]
+					#print ("else water cell: temp2:", temp2, " humidity: ",humidity )
+					pass
+			else:
+				# Land cell
+				var is_passable: bool = next_is_valid and grid.cells["h"][next_index] <= MAX_PASSABLE_ELEVATION
+				#var is_passable = true
+				#var altitude = grid.cells["h"][next_index]
+				#if humidity == 0:
+					#print ("Land cell humidity 1 = 0")
+				var precipitation: float = get_precipitation(humidity, current, next, modifier, grid) if is_passable else humidity
+				grid.cells["prec"][current] += precipitation
+				var temp3 = grid.cells["prec"][current]
+				var evaporation: int = 1 if precipitation > 1.5 else 0 # Some humidity evaporates back
+				#print ("Humidity: ", humidity)
+				humidity = GeneralUtilities.minmax(humidity - precipitation + evaporation, 0, max_prec) if is_passable else 0
+				#if humidity == 0:
+					#print ("Land cell humidity 2 = 0")
+				#print ("land cell: temp3:", temp3, "humidity: ", humidity, " precipitation: ", precipitation)
+			current += next # Move to next cell
+	
+
 			
-			var precipitation = get_precipitation(humidity, current, next, modifier, grid) if is_passable else humidity
-			grid.cells["prec"][current] += precipitation
-			var evaporation = 1 if precipitation > 1.5 else 0
-			# some humidity evaporates back to the atmosphere
-			humidity = clamp(humidity - precipitation + evaporation, 0, max_prec) if is_passable else 0
-			
-			
-func get_precipitation(humidity: float, i: int, n: int, modifier, grid: Grid) -> float:
-	var normal_loss = max(humidity / (10.0 * modifier), 1)
-	var diff = max(grid.cells["h"][i + n] - grid.cells["h"][i], 0)
-	var mod = pow(grid.cells["h"][i + n] / 70.0, 2)
-	return clamp(normal_loss + diff * mod, 1, humidity)
+func get_precipitation(humidity: float, i: int, n: int, modifier: float, grid: Grid) -> float:
+	var normal_loss: float = max(humidity / (10.0 * modifier), 1)
+	if i + n >= grid.cells.h.size():
+		return humidity  # Prevents out-of-bounds access
+	var diff: int = max(grid.cells["h"][i + n] - grid.cells["h"][i], 0)
+	var h1 = grid.cells["h"][i + n] 
+	var h2 = grid.cells["h"][i]
+	var temp2 = grid.cells["h"][i + n] / 70.0
+	var mod: float = grid.cells["h"][i + n] / 70.0 **2
+	var temp3: float = normal_loss + diff * mod
+	var temp = GeneralUtilities.minmax(normal_loss + diff * mod, 1.0, humidity)
+	#if temp == 0:
+		#print ("normal_loss: ", normal_loss, " temp2: ", temp2, " temp3: ", temp, "humidity: ", humidity)
+	#return clamp(normal_loss + diff * mod, 1.0, humidity)
+	return GeneralUtilities.minmax(normal_loss + diff * mod, 1.0, humidity)
+	
+	

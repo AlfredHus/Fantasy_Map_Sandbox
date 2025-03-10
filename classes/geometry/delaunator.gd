@@ -145,6 +145,7 @@ func _constructor() -> void:
 	_dists.resize(n)
 
 	update()
+	pass
 
 # Updates the triangulation if you modified delaunay.coords values in place, 
 # avoiding expensive memory allocations. Useful for iterative relaxation algorithms such as Lloyd's.

@@ -42,3 +42,5 @@ $ git remote remove origin
 
 - Add and commit multiple files
 git add . && git commit -m "your message here"
+
+git plugin documentation URL: https://github.com/godotengine/godot-git-plugin/wiki/Git-plugin-v3

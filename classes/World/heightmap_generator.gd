@@ -141,6 +141,8 @@ func add_step(tool , a2, a3, a4, a5):
 	if (tool == "Invert"): return invert(a2.to_int(), a3)
 	if (tool == "Add"): return modify(a3, a2.to_float(), 1) 
 	if (tool == "Multiply"): return modify(a3, 0, a2.to_float()) 
+	if (tool == "Smooth"): return smooth(a2.to_float())
+	pass
   #
 ## Raises the surrounding land
 ## Params
@@ -188,19 +190,19 @@ func add_one_hill(height: String, range_x: String, range_y: String):
 	
 	# This block of code finds the initial starting point.
 	while true:
-		var temp_width = _grid.width # TESTING
+		var temp_width = _grid.width # # DEBUG
 		var temp_height = _grid.height # DEBUG
-		var x = get_point_in_range(range_x, _grid.width)
-		var y = get_point_in_range(range_y, _grid.height)
+		var x: float = get_point_in_range(range_x, _grid.width)
+		var y: float = get_point_in_range(range_y, _grid.height)
 		# Get the initial start point that will be used to begin the height 
 		# map population
 
 		start = _grid.find_grid_cell(x, y)
 		
-		var start1 = _grid.find_grid_cell_index(x, y)
+		var start1 = _grid.find_grid_cell_index(x, y) # DEBUG
 		# Make sure that the height value is > 90
-		
 		if heights[start] + h <= 90 or limit >= 50:
+			var temp_4 =  heights[start] + h # DEBUG
 			break
 		limit += 1
 		# Used for debugging the code. Shows where the start cell is.
@@ -212,16 +214,17 @@ func add_one_hill(height: String, range_x: String, range_y: String):
 
 	# Queue is used to store the points that have not yet had points assigned
 	# to them. The initial will be of size 1 and contain the initial height
-	var queue: Array[float]
+	#var queue: Array[float]
+	var queue: Array[int]
 	queue = [start]
 	
 	# Process cells using a queue
 	while queue.size() > 0:
-		var q = queue.pop_front()
-		var temp_q = _grid.cells["c"].size()
-		if q > _grid.cells["c"].size():
+		var q: int = queue.pop_front()
+		var temp_q = _grid.cells["c"].size() # DEBUG
+		if q > _grid.cells["c"].size(): # DEBUG
 			print ("q is greater than grid = ", q)
-		counter += 1 # TESTING
+		counter += 1 # DEBUG
 		#print ("Queue size: ", queue.size())
 		# cells["c"] contains the edges around a point for each point in the 
 		# voronoi diagram. These are the triangle points. For each point we 
@@ -238,23 +241,22 @@ func add_one_hill(height: String, range_x: String, range_y: String):
 			var c_change = change[c] # DEBUG
 			if change[c] > 0:
 				continue		
-			#print ("Change: ",change[q] )
 			# Calculated the height for the point and mark it as used
 			# For each height, add some randomness to provide for more 
 			# irregularity.
-			#print (" ", _temp_change, " ", change[q])
 			_temp_change = pow(change[q], _blob_power) * (randf() * 0.2 + 0.9) # DEBUG
 			change[c] = pow(change[q], _blob_power) * (randf() * 0.2 + 0.9)
 			#print (_temp_change, " ", change[c])
 			if change[c] > 1:
 				# Add the point to the queue
 				queue.append(c)
-	#print (change)
 	# Put the heights into the heights array. Clamp the values so the height will be between 0 and 100
 	for i in heights.size():
 		heights[i] = clamp(heights[i] + change[i], 0, 100)
+		pass
+	pass
 		#print (" ", heights[i], " ", change[i])
-	#print("Heights: ", heights)
+	#print("Add One Hill Heights: ", heights)
 	
 ## Lowers the surrounding land		
 func add_pit(count: String, height: String, range_x: String, range_y: String):
@@ -519,6 +521,7 @@ func add_one_trough(height, range_x, range_y, start_cell, end_cell):
 			var min = neighbors[min_index]
 			heights[min] = (heights[cur] * 2 + heights[min]) / 3
 			cur = min
+	#print ("Add One Trough Heights: ", heights)
 
 # Creates a vertical or horizontal lowered section
 func add_strait(width, direction := "vertical"):
@@ -674,21 +677,25 @@ func modify(target_range: String, add: float, mult: float, power: float = 0.0) -
 ## This means land next to a pit will lower, and land next to a hill will rise. Smooth removes any 
 ## spiky bits near land
 #
-func smooth(fr: float = 2.0, add: float = 0.0) -> void:
-	var new_heights = []
+func smooth(fr: float = 2.0, add: float = 0.0):
+	var new_heights: Array[int]= []
 	for i in range(heights.size()):
-		var neighbors = [heights[i]]  # Include the current height
-		for c in _voronoi.cells["c"][i]: # Add the neighbors' heights
+		var neighbors: Array[int] = [heights[i]]  # Include the current height
+		for c in _grid.cells["c"][i]: # Add the neighbors' heights
 			neighbors.append(heights[c])
 
-		var mean = Statistics.mean(neighbors)
+		var mean: float = Statistics.mean(neighbors)
 		if fr == 1:
-			new_heights.append(mean + add)
+			new_heights.append(int(mean + add))
+			pass
 		else:
-			var smoothed = clamp((heights[i] * (fr - 1) + mean + add) / fr, 1, 100)
+			var smoothed: int = clamp((heights[i] * (fr - 1) + mean + add) / fr, 1, 100)
 			new_heights.append(smoothed)
+			pass
 	
 	heights = new_heights
+	pass
+	#print ("Smooth heights: ", heights)
 
 
 func calculate_mean(values: Array) -> float:
@@ -790,6 +797,7 @@ func invert(count: int, axes: String) -> PackedInt32Array:
 		var inverted_i: int = nx + (ny * cells_x)
 		inverted.append(heights[inverted_i])
 	heights = inverted
+	print ("Invert heights: ", heights)
 	return heights
 	
 	

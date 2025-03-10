@@ -46,6 +46,8 @@ var vertices: Dictionary = {
 	"c": []  # integer[][]  
 	}
 
+var points: PackedVector2Array 
+
 # Contains dictionary of features -> islands, lakes and oceans. 
 # Element 0 has no data. 
 var features = []
@@ -67,3 +69,14 @@ var feature: Dictionary = {
 #                       (perimetric vertices)
 # name: String - name, available for lake type only
 }	
+#
+#func _init(cells_desired: int, area: Rect2):
+	#self.cells_desired = cells_desired
+	#_grid_area = area
+	#width = area.size.x
+	#height = area.size.y
+	## snapped() is used to set the decimal places of the float value to 2
+	##spacing = snappedf(sqrt((width * height) / cells_desired),0.01)
+	#spacing = GeneralUtilities.rn(sqrt((width * height) / cells_desired),2)
+	#cells_x = floor((width + 0.5 * spacing - 1e-10) / spacing)
+	#cells_y = floor((height + 0.5 * spacing - 1e-10) / spacing)

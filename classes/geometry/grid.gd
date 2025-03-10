@@ -150,7 +150,7 @@ enum _InitialPointSize {LARGE, MEDIUM, SMALL}
 # The area of the rectangle that the points are displayed in.
 var _grid_area: Rect2
 # The spacing between the points before jittering.
-var _spacing: float
+var spacing: float
 	
 ## Constructor. Create initial grid. 
 ## 
@@ -174,10 +174,10 @@ func _init(cells_desired: int, area: Rect2):
 	width = area.size.x
 	height = area.size.y
 	# snapped() is used to set the decimal places of the float value to 2
-	#_spacing = snappedf(sqrt((width * height) / cells_desired),0.01)
-	_spacing = GeneralUtilities.rn(sqrt((width * height) / cells_desired),2)
-	cells_x = floor((width + 0.5 * _spacing - 1e-10) / _spacing)
-	cells_y = floor((height + 0.5 * _spacing - 1e-10) / _spacing)
+	#spacing = snappedf(sqrt((width * height) / cells_desired),0.01)
+	spacing = GeneralUtilities.rn(sqrt((width * height) / cells_desired),2)
+	cells_x = floor((width + 0.5 * spacing - 1e-10) / spacing)
+	cells_y = floor((height + 0.5 * spacing - 1e-10) / spacing)
 	
 	
 	
@@ -186,14 +186,14 @@ func _init(cells_desired: int, area: Rect2):
 ## Jittered points are used to generate azgaar type maps.[br]
 ## Returns the generated [code]points[/code]
 func set_jittered_grid_points() -> PackedVector2Array:
-	points =  get_jittered_grid(width, height, _spacing)
+	points =  get_jittered_grid(width, height, spacing)
 	
 	# set the indexes of the points. Used in the azgaar code only
 	for x in range(points.size()):
 		#i.append(x)
 		cells["i"].append(x)
 	points_n = points.size()
-	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, _spacing)
+	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, spacing)
 	for i in exterior_boundary_points:
 			points.append(i)
 	
@@ -206,9 +206,9 @@ func set_jittered_grid_points() -> PackedVector2Array:
 	
 func place_points():
 	# The boundary points on the grid which are outside the voronoi cell grid.
-	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, _spacing)
+	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, spacing)
 	# The points returned do not contain the boundary points.
-	points =  get_jittered_grid(width, height, _spacing)
+	points =  get_jittered_grid(width, height, spacing)
 	points_n = points.size() 
 	# Combine points with exterior_boundary_points
 	# Set up the cells.i index.
@@ -222,7 +222,7 @@ func set_points_by_poisson_distribution(sampling_min_distance, sampling_poisson_
 	var pds: PoissonDiscSampling = PoissonDiscSampling.new()	
 	points = pds.generate_points(sampling_min_distance, _grid_area, sampling_poisson_max_tries, Vector2(INF, INF))
 	points_n = points.size()
-	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, _spacing)
+	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, spacing)
 	for i in exterior_boundary_points:
 			points.append(i)
 	interior_boundary_points = generate_interior_boundary_points(_grid_area) 
@@ -247,7 +247,7 @@ func set_random_points(size: Vector2i) -> PackedVector2Array:
 		new_point.y = int(new_point.y)
 		points.append(new_point)	
 
-	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, _spacing)
+	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, spacing)
 	for i in exterior_boundary_points:
 		points.append(i)
 		
@@ -302,11 +302,11 @@ func set_initial_points(initial_point_size: int) -> PackedVector2Array:
 func generate_exterior_boundary_points(area: Rect2, spacing: float) -> PackedVector2Array:
 	#var offset: int = roundi(-1 * spacing)
 	var offset: int = GeneralUtilities.rn(-1 * spacing)
-	var b_spacing: float = spacing * 2
+	var bspacing: float = spacing * 2
 	var width: int = area.size.x - offset * 2 # DEBUG:AH  
 	var height: int = area.size.y- offset * 2 # DEBUG:AH
-	var number_x: int = int(ceil(width / b_spacing)) - 1
-	var number_y: int = int(ceil(height / b_spacing)) - 1
+	var number_x: int = int(ceil(width / bspacing)) - 1
+	var number_y: int = int(ceil(height / bspacing)) - 1
 
 	var step: float = 0.5
 	while step < number_x:
@@ -336,9 +336,9 @@ func generate_interior_boundary_points(area: Rect2) -> PackedVector2Array:
 	var height: int = area.size.y
 	var left: int = area.position[0]
 	var top: int = area.position[1]
-	var boundary_spacing: float = _spacing
-	var W: float = ceil((width - 2 * curvature) / boundary_spacing)
-	var H: float = ceil((height - 2 * curvature) / boundary_spacing)
+	var boundaryspacing: float = spacing
+	var W: float = ceil((width - 2 * curvature) / boundaryspacing)
+	var H: float = ceil((height - 2 * curvature) / boundaryspacing)
 	
 	# Top and bottom
 	#for q in range(W):
@@ -418,24 +418,24 @@ func get_jittered_grid(width, height, spacing) -> PackedVector2Array:
 	
 ## Return cell index on the grid at location [param x] and [param y]
 func find_grid_cell(x: int, y:int):
-	#var temp = floor(min(y / _spacing, cells_y - 1.0)) * cells_x + floor(min(x / _spacing, cells_x - 1.0))
-	#var temp1 = floor(min(y / _spacing, cells_y - 1.0))
-	#var temp2 = floor(min(x / _spacing, cells_x - 1.0))
-	#var temp3 = floor(min(y / _spacing, cells_y - 1.0)) * cells_x + floor(min(x / _spacing, cells_x - 1.0))
+	#var temp = floor(min(y / spacing, cells_y - 1.0)) * cells_x + floor(min(x / spacing, cells_x - 1.0))
+	#var temp1 = floor(min(y / spacing, cells_y - 1.0))
+	#var temp2 = floor(min(x / spacing, cells_x - 1.0))
+	#var temp3 = floor(min(y / spacing, cells_y - 1.0)) * cells_x + floor(min(x / spacing, cells_x - 1.0))
 	#
 	#var temp4 = points.find(Vector2(x, y))
 	#var temp5 = find_nearest_site(Vector2(x, y))
 	#
-	#var temp6 = y / _spacing
-	#var temp7 = x / _spacing
+	#var temp6 = y / spacing
+	#var temp7 = x / spacing
 	#return temp5
-	return floor(min(y / _spacing, cells_y - 1.0)) * cells_x + floor(min(x / _spacing, cells_x - 1.0))
+	return floor(min(y / spacing, cells_y - 1.0)) * cells_x + floor(min(x / spacing, cells_x - 1.0))
 	
 # Given a point (Vector2), a cell size, and the grid width (in cells),
 # this function returns the grid cell index for that point.
 func find_grid_cell_index(x, y) -> int:
-	var cell_x: int = int(x / _spacing)
-	var cell_y: int = int(y / _spacing)
+	var cell_x: int = int(x / spacing)
+	var cell_y: int = int(y / spacing)
 	return cell_x + cell_y * cells_x
 	
 func find_grid_center_point():

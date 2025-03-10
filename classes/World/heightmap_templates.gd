@@ -161,7 +161,7 @@ var heightmap_templates: Dictionary = (func():
 		Trough 4-8 15-30 50-90 60-80
 		Trough 4-8 15-30 70-100 80-100
 		Invert 0.25 x 0 0"""
-
+		
 	var shattered: String = """Hill 8 35-40 15-85 30-70
 		Trough 10-20 40-50 5-95 5-95
 		Range 5-7 30-40 10-90 20-80

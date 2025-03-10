@@ -1,12 +1,14 @@
 [gd_scene load_steps=2 format=3 uid="uid://cxglm7a4qsn7q"]
 
-[ext_resource type="Script" path="res://main.gd" id="1_l63tg"]
+[ext_resource type="Script" uid="uid://dsupr2g7tvxxr" path="res://main.gd" id="1_l63tg"]
 
 [node name="FantasyMapSandbox" type="Node2D"]
 script = ExtResource("1_l63tg")
 _jittered_grid = true
 _default_seed_points = 1000
+_draw_packed_triangle_edges = true
+_draw_packed_points = true
 _cells_desired = 1000
 area = Rect2(0, 0, 1152, 648)
-_selected_world = 2
+_selected_world = 5
 _draw_fantasy_map_elevations = true

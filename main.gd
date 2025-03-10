@@ -72,16 +72,19 @@ const MapRegionScene := preload("res://map_region.tscn")
 @export var _draw_filled_in_triangles: bool = false
 ## Set this if you want to see the triangle edges only
 @export var _draw_triangle_edges: bool = false
+@export var _draw_packed_triangle_edges: bool = false
 ## Set this to draw arrows that show the direction of the triangle segments
 @export var _draw_triangle_edges_with_arrows: bool = false
 ## Set this if you want to see the voronoi cells with random colors
 @export var _draw_voronoi_cells: bool = false
+@export var _draw_packed_voronoi_cells: bool = false
 ## Set this if you only want to see the voronoi cells that are convex hulls
 @export var _draw_voronoi_cells_convex_hull: bool = false
 ## Set this if you want to see the edges of the voronoi cell.
 @export var _draw_voronoi_edges: bool = false
 ## Set this if you want to see the points that were provided to Delaunay
 @export var _draw_points: bool = false
+@export var _draw_packed_points: bool = false
 ## Set this if you want to see the centroids of the voronoi cells.
 @export var _draw_centroids: bool = false
 ## Use this for setting the size of a Azgaar style map
@@ -122,7 +125,12 @@ const MapRegionScene := preload("res://map_region.tscn")
 			 	"oldWorld", "fractious") var _selected_world
 ## To generate the elevations, you need to also select "Jittered Grid"
 @export var _draw_fantasy_map_elevations: bool = false
-@export var _draw_feature_map: bool = false
+## Dwaw a feature map for Azgaar style maps
+@export var _draw_az_feature_map: bool = false
+## Dwaw a temperature map for Azgaar style maps
+@export var _draw_az_temperature_map: bool = false
+## Dwaw a precipitation map for Azgaar style maps
+@export var _draw_az_precipitation_map: bool = false
 
 @export_group("Map Generation")
 @export var _generate_fantasy_map: bool = false
@@ -132,7 +140,7 @@ const MapRegionScene := preload("res://map_region.tscn")
 		_generate_water_land_map = value
 		queue_redraw
 
-@export_group("Display Data")
+@export_group("Display Data Points")
 ## Set this if you want to display the ID of the voronoi cell
 @export var _draw_voronoi_cell_site_position_data: bool = false
 ## Set this if you want to display the voronoi cell ID and site coordinates
@@ -151,6 +159,12 @@ enum TrianglePositionData {CORNERS = 1, MID_POINTS = 2, BOTH = 3}
 @export var _draw_border_data: bool = false
 ## Use this to display the boundary points
 @export var _draw_boundary_data: bool = false
+## Use this to display precipiation data on Azgaar style maps.
+@export var _display_az_precipitation_data: bool = false
+## Use this to display temeprature data on Azgaar style maps.
+@export var _display_az_temperature_data: bool = false
+## Use this to display elevation data on Azgaar style maps.
+@export var _display_az_elevation_data: bool = false
 
 @export_group("Relationships")
 ## Set to draw lines to the neighbors of a Voronoi Site when selecting the Voronoi Cell
@@ -179,17 +193,22 @@ var points := PackedVector2Array()
 
 
 var delaunay: Delaunator
+var packed_delaunay: Delaunator
 var voronoi: Voronoi
+var packed_voronoi: Voronoi
 var polylabel: PolyLabel
 var debug: Debug
 var elevation: Elevation
 var grid: Grid
+var pack: Pack # Packed Grid
 var heightmap_generator: HeightMapGenerator
 var features: Features
 var lakes: Lakes
 var map: Map
 var temperature: Temperature
 var precipitation: Precipitation
+
+
 #var voronoi_cells:= PackedVector2Array()
 #var coordinates := PackedVector2Array()
 var size: Vector2i
@@ -419,7 +438,6 @@ func _ready()  -> void:
 			map_region.region_selected.connect(_on_MapRegion_selected.bind(key))	
 
 
-
 	var debug = Debug.new(grid)
 	
 	if debug_mode: print ("===============Debug Data=============\n")
@@ -527,6 +545,118 @@ func calculateVoronoi():
 	# grid.cells dictionary only contains the points - the  boundary points.
 	voronoi = Voronoi.new(points, grid, delaunay, area)
 	
+	
+# Calculate Delaunay and then Voronoi diagram for the packed grid.
+func calculate_voronoi_packed(points: Array, boundary: Array) -> Dictionary:
+	var packed_grid: Grid
+	packed_grid = Grid.new(points.size(), area)
+	packed_grid.points_n = points.size()
+	var all_points: Array
+	all_points.append_array(boundary)
+	#points.append_array(boundary)
+	
+	# Calculate Delaunay triangulation
+	#var vector_points = PackedVector2Array(points)
+	var vector_points: PackedVector2Array
+	# Brute foce the conversion to packedvector2array from array
+	for p in points:
+		vector_points.append(Vector2(p[0], p[1]))
+	print ("Vector_points: ", vector_points)
+	#packed_delaunay = Delaunator.new(points)
+	packed_delaunay = Delaunator.new(vector_points)
+	pack.points = vector_points
+
+	# Calculate Voronoi diagram
+	#packed_voronoi = Voronoi.new(points, packed_grid, packed_delaunay, area)
+	packed_voronoi = Voronoi.new(vector_points, packed_grid, packed_delaunay, area)
+
+	# Extract cells and vertices
+	var cells = packed_grid.cells
+	cells["i"] = []  # Array of indexes
+	for i in range(points.size()):
+		cells["i"].append(i)
+	
+	var vertices = packed_grid.vertices
+
+	return {"cells": packed_grid.cells, "vertices": packed_grid.vertices}
+
+# regraph uses the data from the grid class as a starting point.
+# It uses the grid.cells, grid.points and grid.features
+# It creates new vaviables cells["p"], "g", and "h" to store the new data 
+# that is created
+# "p" - vertices coordinates [x, y], integers
+# "g" - indexes of a source cell in grid. The only way to find correct grid 
+# cell parent for pack cells
+#  
+
+func reGraph():
+	var new_cells = {"p": [], "g": [], "h": []} # Store new data
+	var spacing2 = grid.spacing ** 2
+	#var quadtree = QuadTree.new(Rect2(Vector2.ZERO, Vector2(10000, 10000))) # Define appropriate bounds
+	pack = Pack.new()
+	for i in grid.cells["i"]:
+		var height = grid.cells["h"][i]
+		var type = grid.cells["t"][i]
+		
+		 # Exclude all deep ocean points
+		if height < 20 && type != -1 && type != -2:
+			continue
+		# Exclude non-coastal lake points
+		if type == -2 && (i % 4 == 0 || grid.features[grid.cells["f"][i]]["type"] == "lake"):
+			continue 
+
+		# for each point from the existing grid.points grid, add them to the 
+		# new variables, 
+		var x = grid.points[i].x
+		var y = grid.points[i].y
+		#add_new_point(i, x, y, height)
+		new_cells["p"].append([x, y])
+		new_cells["g"].append(i)
+		new_cells["h"].append(height)
+
+		# Add additional points for coastal cells
+		if type == 1 || type == -1:
+			if grid.cells["b"][i]:
+				continue # Not for near-border cells
+			for e in grid.cells["c"][i]:
+				if i > e:
+					continue
+				if grid.cells["t"][e] == type:
+					var dist2 = (y - grid.points[e].y) ** 2 + (x - grid.points[e].x) ** 2
+					if dist2 < spacing2:
+						continue # Too close
+					#var x1 = snappedf((x + grid.points[e].x) / 2, 0.1)
+					#var y1 = snappedf((y + grid.points[e].y) / 2, 0.1)
+					var x1 = GeneralUtilities.rn((x + grid.points[e].x) / 2, 1)
+					var y1 = GeneralUtilities.rn((y + grid.points[e].y) / 2, 1)					
+					#add_new_point(i, x1, y1, height)
+					new_cells["p"].append([x, y])
+					new_cells["g"].append(i)
+					new_cells["h"].append(height)
+	print ("new_cells[p]: ", new_cells["p"])
+	var packed_grid = calculate_voronoi_packed(new_cells["p"], grid.exterior_boundary_points)
+	
+	
+	#pack.cells.points =  new_cells["p"]
+	pack.cells["p"] = new_cells["p"]
+	pack.cells["g"] = new_cells["g"]
+	pack.cells["h"] = new_cells["h"]
+	pass
+	
+	
+
+	# Insert all points into quadtree
+	#for index in range(new_cells["p"].size()):
+		#quadtree.insert(Vector2(new_cells["p"][index][0], new_cells["p"][index][1]), index)
+
+	# Store quadtree in pack
+	#pack.cells.q = quadtree
+
+func add_new_point(i, x, y, height, new_cells):
+	new_cells["p"].append([x, y])
+	new_cells["g"].append(i)
+	new_cells["h"].append(height)
+
 # This function is to isolate the implementaton of Azgaars Fantasy Map
 func generate_azgaar_style_fantasy_map(world_selected: String):
 		heightmap_generator = HeightMapGenerator.new(grid, voronoi, world_selected)
@@ -542,6 +672,7 @@ func generate_azgaar_style_fantasy_map(world_selected: String):
 		map.calculate_map_coordinates(grid)
 		temperature.calculate_temperatures(grid, map)
 		precipitation.generate_precipitation(grid, map)
+		reGraph()
 		#features.markup_grid_packed(grid)
 		#features.specify(grid)
 		#grid.print_min_max_values()
@@ -631,6 +762,7 @@ func _draw()  -> void:
 	if _draw_filled_in_triangles: draw_filled_in_triangles(points, delaunay)
 	#draw_triangle_data(points, delaunay)
 	if _draw_voronoi_cells: draw_voronoi_cells1(points, delaunay)
+	if _draw_packed_voronoi_cells: draw_packed_voronoi_cells1(pack.points, packed_delaunay)
 	#if _draw_voronoi_cells: draw_voronoi_cells_dict()
 	
 	if _draw_triangles: draw_triangles(points, delaunay)
@@ -672,17 +804,26 @@ func _draw()  -> void:
 	if _draw_fantasy_map_elevations: draw_voronoi_fantasy_elevations()
 	if _generate_water_land_map: draw_water_land_map()
 	#if _points_from_image: draw_voronoi_fantasy_heightmap_from_image()
-	if _draw_feature_map: draw_voronoi_feature_map()
+	# Draw the feature map for Azgaar style maps
+	if _draw_az_feature_map: draw_az_feature_map()
+	# Draw the temperature map for Azgaar style maps
+	if _draw_az_temperature_map: draw_az_temperature_map()
+	# Dwaw the precipitation map for Azgaar style maps
+	if _draw_az_precipitation_map: draw_az_precipitation_map()
 	
 	if _draw_triangle_edges: draw_triangle_edges(points, delaunay)
+	if _draw_packed_triangle_edges: draw_packed_triangle_edges(pack.points, packed_delaunay)
 	
 	if _draw_voronoi_edges: draw_voronoi_edges(points, delaunay)
 	if _draw_points: draw_points()
+	if _draw_packed_points: draw_packed_points()
 	if _draw_voronoi_cell_site_position_data: draw_point_location_data()
 	if _draw_voronoi_points_position_data: draw_voronoi_cell_position_data()
 
-
-
+ 	# Display Data points for Azgaar style maps
+	if _display_az_precipitation_data: display_az_precipitation_data()
+	if _display_az_temperature_data: display_az_temperature_data()
+	if _display_az_elevation_data: display_az_elevation_data()
 
 	# Highlight selected site and its neighbors
 	if (draw_neighbor_lines): draw_neighbors()
@@ -832,7 +973,55 @@ func draw_triangle_edges(points: PackedVector2Array, delaunay: Delaunator):
 			#draw_position_with_id_at_location(p, p, e, 10, Color.BLACK)	
 			draw_line(p, q, Color.RED, 1.0)
 	
-
+func draw_packed_triangle_edges(points: PackedVector2Array, delaunay: Delaunator):
+	var seen : PackedVector2Array
+	for e in delaunay.triangles.size():
+		var temp_e = delaunay.halfedges[e] # used for DEBUG purposes
+		if e > delaunay.halfedges[e]:
+			var next_e: int = voronoi.next_half_edge(e)
+			# A half-edge e starts at points[delaunay.triangles[e]]
+			# delaunay.triangles[e] gets the point id where the half-edge 
+			# starts. The point id is used to get the coordinates of the 
+			# point as stored in the points[] array
+			var p: Vector2 = points[delaunay.triangles[e]]
+			# delaunay.triangles[next_half_edge(e)] gets the opposite 
+			# half-edge point id in the adjacent triangle or -1 if there is no adjacent
+			# triangle. The point id is used to get the coordinates of the 
+			# point as stored in the points[] array
+			var q: Vector2 = points[delaunay.triangles[voronoi.next_half_edge(e)]]
+			# get a different position for display the next shared index
+			var mid_point = lerp( p, q, .5) 
+			#print("e:", e, " next_half_edge(e):", next_e, " point:", delaunay.triangles[next_e], " point e: ", delaunay.triangles[e])
+			#print the edge data being printed
+			if _draw_triangle_position_data:
+				#print ("Drawing a line for Edge ID: ", e, " from : ", p, " to ", q)
+				#print ("Indexes for Edge ID:", " from: ", delaunay.triangles[e], " to: ", delaunay.triangles[voronoi.next_half_edge(e)])
+				pass
+			# Since a triangle edge point can be shared, this means each time
+			# it is shared, its index changes. When you display the index
+			# it keeps overwriting and you get a blob. So we make a choice
+			# to not overwrite. We lerp the shared index so it shows up in a
+			# different position on the line so we can see that value. 
+			# Displaying the IDs only works when you have a small diagram.
+			# If the diagram gets to big, you just get blobs.
+			# You can also look at the data being printed in the output console
+			# to see the edge data beig drawn.
+			if _draw_triangle_position_data:
+				if triangle_position_data == TrianglePositionData.MID_POINTS or triangle_position_data == TrianglePositionData.BOTH:
+					draw_position_with_id_at_location(mid_point, p, delaunay.triangles[e], 10, Color.BLUE)
+					draw_circle(mid_point, 3, Color.BLUE)
+				if seen.find(p) == -1:
+				# draw the position id for each triangle point
+					if triangle_position_data == TrianglePositionData.CORNERS or triangle_position_data == TrianglePositionData.BOTH:
+						draw_position_with_id_at_location(p, p, delaunay.triangles[e], 10, Color.BLACK)
+						#draw_position_with_two_ids_at_location(p, p, delaunay.triangles[e], e, 10, Color.BLACK)
+					seen.append(p)
+				#else:
+					#mid_point = lerp (p, q, .8)
+					#draw_position_with_id_at_location(mid_point, p, e, 10, Color.RED)
+			#draw_position_with_id_at_location(p, p, e, 10, Color.BLACK)	
+			draw_line(p, q, Color.RED, 1.0)
+			
 func draw_triangle_data(points: PackedVector2Array, delaunay: Delaunator):
 	var seen : PackedVector2Array
 	var font : Font
@@ -946,7 +1135,7 @@ func draw_voronoi_edges(points: PackedVector2Array, delaunay: Delaunator) -> voi
 			draw_line(
 				from,
 				to,
-				Color.GREEN, 2.0)
+				Color.BLACK, 2.0)
 			#draw_position_with_id(from, e)
 			#draw_position_with_id(to, e)
 			if not seen.has(from) and not seen.has(to) :
@@ -1096,6 +1285,82 @@ func draw_voronoi_cells1(points, delaunay):
 			#draw_number(test_vertice, )
 			#draw_circle(Vector2(result[0], result[1]), 6, Color.DARK_GREEN)
 
+func draw_packed_voronoi_cells1(points, delaunay):
+	var seen = [] # used to keep track of which half-edges have been seen (i.e., iterated over)
+	var count_voronoi = 0
+	# iterate over all of the triangles
+	#test_voronoi_cell_dictionary()
+	for e in delaunay.triangles.size():
+	
+		#print ("selected cell is " , e)
+		#print ("Coordinate is ", points[e])
+	
+		var triangles = []
+		var vertices = []
+		# This is the center of the voronoi
+		# edges_around_point() will calculate the points around this point
+		var p = delaunay.triangles[voronoi.next_half_edge(e)]
+		#var coords = points[e]
+		# This is the starting point
+		#var coords1 = points[delaunay.triangles[e]]
+		#print ("coords = ", coords, "coords1 = ", coords1)
+		#print ("p = ", p, "p coord = ", points[p])
+		# if we have not yet seen this half-edge, iterate over it and set that
+		# it has been seen
+		if not seen.has(p):
+			seen.append(p)
+			var edges = voronoi.edges_around_point(delaunay, e)
+			#print ("Edges ", edges, "e = ", e)
+			for edge in edges:
+				triangles.append(voronoi.triangle_of_edge(edge))	
+			# Here is where we convert the indexes to the actual coordinates
+			# for the polygon that will form te voronoi cell
+			for t in triangles:
+				vertices.append(voronoi.triangle_circumcenter(points, delaunay, t))
+		# You need at least 3 vertices to form a voronoi cell, so if it less
+		# than three, you do not tray to draw the voronoi cell
+		if triangles.size() > 2:	
+			var color = Color(randf(), randf(), randf(), 1)
+			var voronoi_cell = PackedVector2Array()
+			## The vertices are the coordinates for the polygon that will form the 
+			## voronoi cell.
+			for vertice in vertices:
+				voronoi_cell.append(Vector2(vertice[0], vertice[1]))			
+			draw_polygon(voronoi_cell, PackedColorArray([color]))		
+			#draw_polygon(vertices, PackedColorArray([color]))	
+
+			
+			# This is not part of draw voronoi cell. It is here to help me
+			# how the voronoi cell is drawm
+			color = Color(randf(), randf(), randf(), 1)
+			for t in triangles:
+				#print ("t = ", t)
+				var t_points = voronoi.points_of_triangle(points, delaunay, t)
+				t_points.append(t_points[0])
+				draw_polyline(t_points, color)
+				#print (t_points)
+				pass
+				#draw_triangles_around_point(points, delaunay, e)
+				#draw_filled_in_triangles_around_point(points, delaunay, t)
+				#draw_triangles_around_point(points, delaunay, e)
+	
+			# The way polylabel is currently written, it uses a GeoJSON like 
+			# format (an array of arrays of [x,y] points
+			# to calculate the bext position for a label
+			# This is not currently how the points for the vertices are stored, 
+			# so we have to convert the array of vertices to an array of arrays,
+			# For now, this will do, but one option is to convert polylabel so 
+			# it uses a single array. 
+			# COMMENT OUT CODE FOR NOW TILL WE USE IT. DO NOT DELETE
+			var test_vertice = []
+			test_vertice.append([])
+			for vertice in vertices:
+				test_vertice[0].append(Vector2(vertice[0], vertice[1]))
+		
+			var polylabel = PolyLabel.new()
+			var result = polylabel.get_polylabel(test_vertice, 1.0, false)
+			#draw_number(test_vertice, )
+			#draw_circle(Vector2(result[0], result[1]), 6, Color.DARK_GREEN)
 
 func find_grid_center_point():
 	var size = get_viewport().size
@@ -1305,7 +1570,7 @@ func draw_voronoi_fantasy_elevations():
 	var temp = heightmap_generator.starting_point
 	#draw_circle(heightmap_generator.starting_point, 6, Color.BLACK)
 
-func draw_voronoi_feature_map():
+func draw_az_feature_map():
 	var voronoi_cell_dict: Dictionary = voronoi.get_voronoi_cells()	
 	var color: Color
 	var feature: int 
@@ -1352,9 +1617,77 @@ func draw_voronoi_feature_map():
 		var result = polylabel.get_polylabel(voronoi_vertice, 1.0, false)
 			# set up to print out the border data
 		draw_string(font, Vector2(result[0], result[1]), str(feature), 0, -1, 8, Color.BLACK)
-		#draw_string(font, Vector2(result[0], result[1]), str(distance_field), 0, -1, 8, Color.BLACK)
-				
+
+## Draw a temperature map for the Azgaar style temperature generation
+func draw_az_temperature_map():
+	var voronoi_cell_dict: Dictionary = voronoi.get_voronoi_cells()	
+	var color: Color
+	var feature: int 
+	var font : Font
+	font = ThemeDB.fallback_font
 	
+	for p in grid.points_n:
+		# Draw the temperature color. For now, its white for anything less than
+		# 0 degrees Centigrade and light green for anything above
+		var temperature = grid.cells["temp"][p]
+
+		# Color mapping based on the Universal Thermal Scale:
+		# https://en.wikipedia.org/wiki/Trewartha_climate_classification
+		if temperature >= 35.0: # Severly Hot - 5 °C  or higher 
+			color = Color.DARK_RED
+		elif temperature >= 28.0 && temperature < 35.0: # Very Hot - 28 to 34.9 °C
+			color = Color.RED
+		elif temperature >= 22.2 && temperature < 28.0: # Hot - 22.2 to 27.9 °C
+			color = Color.INDIAN_RED
+		elif temperature >= 18.0 && temperature < 22.2: # Warm - 18 to 22.1 °C 
+			color = Color.GREEN
+		elif temperature >= 10.0 && temperature < 18.0: # Mild = 10 to 17.9 °C
+			color = Color.GREEN_YELLOW
+		elif temperature >= 0.1 && temperature < 10.0: # Cool - 0.1 to 9.9 °C
+			color = Color.BISQUE
+		elif temperature >= -9.9 && temperature < 0.1: # Cold  - −9.9 to 0 °C
+			color = Color.ALICE_BLUE
+		elif temperature >= -24.9 && temperature < -10.0: # Very Cold - −24.9 to −10 °C
+			color = Color.LIGHT_BLUE
+		elif temperature >= -39.9 && temperature < -25.0: # Severely cold - −39.9 to −25 °C 
+			color = Color.BLUE
+		elif temperature >= -40.0: #  	Excessively cold - −40 °C or below
+			color = Color.DARK_BLUE
+		else:
+			color = Color.BLACK # Should not get here.
+				
+		draw_polygon(voronoi_cell_dict[p], PackedColorArray([color]))		
+		
+## Draws a precipitation map for Azgaar style maps. It uses a color scheme to 
+## display the colors.
+func draw_az_precipitation_map():
+	var voronoi_cell_dict: Dictionary = voronoi.get_voronoi_cells()	
+	var color: Color
+	var feature: int 
+	var font : Font
+	font = ThemeDB.fallback_font
+
+	for p in grid.points_n:
+
+		var precipitation = grid.cells["prec"][p]
+		
+		# Basic color scheme. Will replace with a better if a better is
+		# found
+		if precipitation == 0.0: # Dry 
+			color = Color.WHITE_SMOKE
+		elif precipitation <= 10.0: # Low precipitation
+			color = Color.YELLOW
+		elif precipitation <= 20.0: # Moderate precipitation
+			color = Color.ORANGE
+		elif precipitation <= 40.0: # Wet
+			color = Color.ORANGE_RED
+		else:
+			color = Color.DARK_RED # Very Wet
+
+		draw_polygon(voronoi_cell_dict[p], PackedColorArray([color]))		
+	
+
+
 func draw_water_land_map():
 	var voronoi_cell_dict: Dictionary = voronoi.get_voronoi_cells()	
 	var color: Color
@@ -1422,11 +1755,18 @@ func draw_voronoi_cells_convex_hull(points: PackedVector2Array, delaunay: Delaun
 				voronoi_cell.append(Vector2(vertice[0], vertice[1]))
 			#draw_polygon(voronoi_cell, PackedColorArray([color]))
 			draw_polygon(voronoi_cell, PackedColorArray([Color.BLACK]))
+
+
 # Used to draw the points for a voronoi cell. It will display the location
 # of the point and its location in the centroid array	
 func draw_points():
 	for point in points:
-		draw_circle(point, 2, Color.RED)
+		draw_circle(point, 4, Color.RED)
+		
+func draw_packed_points():
+	for point in pack.cells["p"]:
+		draw_circle(Vector2(point[0], point[1]), 2, Color.GREEN)	
+
 
 				
 
@@ -1587,7 +1927,6 @@ func draw_arrow(start: Vector2, end: Vector2, color: Color, spacing: int  = 50):
 		# Draw the arrowhead as a filled triangle
 		draw_polygon([arrow_pos, left_point, right_point], [color])		
 		
-
 
 	
 ###############################################################################
@@ -1916,9 +2255,91 @@ func create_canvas_from_image(image_path: String, cells_x: int, cells_y: int, ce
 				for j in range(cell_size):
 					canvas_image.set_pixel(x * cell_size + i, y * cell_size + j, color)
 
-
-
 	# Convert the canvas image to a texture
 	var texture = ImageTexture.new()
 	texture.create_from_image(canvas_image)
 	return texture	
+
+#region Display Data Overlay Functions 
+###############################################################################
+###                    Display Data Overlay Functions                       ###
+###																			###
+### These functions overlay data onto the various maps. Which maps can      ###
+### have data overlays depends on the map. Here are some general guidance   ###
+### Azgaar Data Overlays have the "az" in their description. This data      ###
+### can be overlayed on the Azgaar maps which also have "az" in their       ###
+### description. For example, you can overlay precipitation data over the   ###
+### the precipitation map of the elevation map.                             ###
+### 																		###
+### Limitation: The overlays should not be used on maps greater than 3000   ###
+### cells. The fonts for the data are not scale, so it can turn into a      ###
+### dark smears on the map, making the map unreadable.                      ###
+###																			###
+###############################################################################	
+
+## Display precipitation data on azgaar style maps.
+func display_az_precipitation_data() -> void:
+	var voronoi_cell_dict: Dictionary = voronoi.get_voronoi_cells()	
+	var font : Font
+	font = ThemeDB.fallback_font
+
+	for p in grid.points_n:
+		var precipitation = grid.cells["prec"][p]
+	
+		# Add the precipitation value as text
+		var voronoi_vertice = []
+		voronoi_vertice.append([])
+
+		for vertice in voronoi_cell_dict[p]:
+			voronoi_vertice[0].append(Vector2(vertice[0], vertice[1]))
+		# get the polylabel position
+		var polylabel = PolyLabel.new()
+		var result = polylabel.get_polylabel(voronoi_vertice, 1.0, false)
+		# set up to print out the precipitation value
+		draw_string(font, Vector2(result[0], result[1]), str(snapped(precipitation, 0.1)), 0, -1, 8, Color.BLACK)			
+
+## Display temperature data on azgaar style maps.
+func display_az_temperature_data() -> void:
+	var voronoi_cell_dict: Dictionary = voronoi.get_voronoi_cells()	
+	var font : Font
+	font = ThemeDB.fallback_font
+	
+	for p in grid.points_n:
+
+		var temperature = grid.cells["temp"][p]
+
+		# Add the temperature value as text
+		var voronoi_vertice = []
+		voronoi_vertice.append([])
+
+		for vertice in voronoi_cell_dict[p]:
+			voronoi_vertice[0].append(Vector2(vertice[0], vertice[1]))
+		# get the polylabel position
+		var polylabel = PolyLabel.new()
+		var result = polylabel.get_polylabel(voronoi_vertice, 1.0, false)
+		# set up to print out the temperature value
+		draw_string(font, Vector2(result[0], result[1]), str(temperature), 0, -1, 8, Color.BLACK)
+	
+	## Display precipitation data on azgaar style maps.
+func display_az_elevation_data() -> void:
+	var voronoi_cell_dict: Dictionary = voronoi.get_voronoi_cells()	
+	var font : Font
+	font = ThemeDB.fallback_font
+
+	for p in grid.points_n:
+		var elevation = grid.cells["h"][p]
+	
+		# Add the value as text
+		var voronoi_vertice = []
+		voronoi_vertice.append([])
+
+		for vertice in voronoi_cell_dict[p]:
+			voronoi_vertice[0].append(Vector2(vertice[0], vertice[1]))
+		# get the polylabel position
+		var polylabel = PolyLabel.new()
+		var result = polylabel.get_polylabel(voronoi_vertice, 1.0, false)
+		# set up to print out the precipitation value
+		draw_string(font, Vector2(result[0], result[1]), str(snapped(elevation, 0.1)), 0, -1, 8, Color.BLACK)			
+	
+	
+#endregion
