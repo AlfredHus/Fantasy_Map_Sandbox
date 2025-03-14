@@ -86,10 +86,12 @@ func line_clip(points: Array, bbox: Array, result: Array= []) -> Array:
 # Returns a clipped polygon
 func polygon_clip(points: Array, bbox: Array) -> Array:
 	
+	points = Array(points)
 	# clip against each side of the clip rectangle
 	for edge in [1, 2, 4, 8]:
 		var result = []
 		var prev = points[points.size() - 1]
+
 		print ("Type of", typeof(prev))
 		var prev_inside = !(bit_code(prev, bbox) & edge)
 		

@@ -147,6 +147,7 @@ const MapRegionScene := preload("res://map_region.tscn")
 @export var _draw_voronoi_points_position_data: bool = false
 ## Set this if you want to have a clickable voronoi cell
 @export var _draw_triangle_position_data: bool = false
+@export var _draw_triangle_packed_position_data: bool = false
 # NOTE: flags are cumulative when you need to check if more than one flag is 
 # selected. So if you want to check if Corners and Mid Points are selected
 # the value to check against is 1 + 2  = 3 (export_flags are increment in powers
@@ -177,6 +178,7 @@ enum TrianglePositionData {CORNERS = 1, MID_POINTS = 2, BOTH = 3}
 @export_group("Configuration Values")
 ## Used to set the lake deep depressions as defined in the Lakes class
 @export var _lake_elevation_limit_output: int = 20
+
 
 
 
@@ -359,9 +361,9 @@ func _ready()  -> void:
 	
 	#if !_draw_fantasy_map_elevations:
 		# Set up the delaunay triangulation
-	delaunay = Delaunator.new(points)
-		# Set up the voronoi structure
-	voronoi = Voronoi.new(points, grid, delaunay, area)
+	#delaunay = Delaunator.new(points)
+		## Set up the voronoi structure
+	#voronoi = Voronoi.new(points, grid, delaunay, area)
 	
 	voronoi.setup_centroids()
 	#print ("Centroids1: ", voronoi.centroids1)
@@ -549,22 +551,29 @@ func calculateVoronoi():
 # Calculate Delaunay and then Voronoi diagram for the packed grid.
 func calculate_voronoi_packed(points: Array, boundary: Array) -> Dictionary:
 	var packed_grid: Grid
-	packed_grid = Grid.new(points.size(), area)
+	var temp = points.size()
+	#packed_grid = Grid.new(points.size(), area)
+	packed_grid = Grid.new(_cells_desired, area)
 	packed_grid.points_n = points.size()
+	pack.points_n = points.size()
 	var all_points: Array
-	all_points.append_array(boundary)
+	all_points.append_array(points)
+	#all_points.append_array(boundary)
 	#points.append_array(boundary)
+	#var temp1 = points.size()
 	
 	# Calculate Delaunay triangulation
 	#var vector_points = PackedVector2Array(points)
 	var vector_points: PackedVector2Array
 	# Brute foce the conversion to packedvector2array from array
-	for p in points:
+	for p in all_points:
 		vector_points.append(Vector2(p[0], p[1]))
-	print ("Vector_points: ", vector_points)
+	#print ("Vector_points: ", vector_points)
 	#packed_delaunay = Delaunator.new(points)
 	packed_delaunay = Delaunator.new(vector_points)
 	pack.points = vector_points
+	
+	
 
 	# Calculate Voronoi diagram
 	#packed_voronoi = Voronoi.new(points, packed_grid, packed_delaunay, area)
@@ -592,6 +601,10 @@ func calculate_voronoi_packed(points: Array, boundary: Array) -> Dictionary:
 func reGraph():
 	var new_cells = {"p": [], "g": [], "h": []} # Store new data
 	var spacing2 = grid.spacing ** 2
+	
+	# gridcells = grid.cells
+	# points grid.points
+	# features = grid.features
 	#var quadtree = QuadTree.new(Rect2(Vector2.ZERO, Vector2(10000, 10000))) # Define appropriate bounds
 	pack = Pack.new()
 	for i in grid.cells["i"]:
@@ -633,14 +646,45 @@ func reGraph():
 					new_cells["p"].append([x, y])
 					new_cells["g"].append(i)
 					new_cells["h"].append(height)
-	print ("new_cells[p]: ", new_cells["p"])
+	#print ("new_cells[p]: ", new_cells["p"])
 	var packed_grid = calculate_voronoi_packed(new_cells["p"], grid.exterior_boundary_points)
 	
+	var temp_cells = {"v": [], "c": [], "b": []} # Store tempdata
 	
 	#pack.cells.points =  new_cells["p"]
 	pack.cells["p"] = new_cells["p"]
 	pack.cells["g"] = new_cells["g"]
 	pack.cells["h"] = new_cells["h"]
+	
+	
+	
+	#for p in packed_grid.cells["v"]:
+		#if p != null:
+			#temp_cells["v"].append(p)
+	#for p in packed_grid.cells["c"]:
+		#if p != null:
+			#temp_cells["c"].append(p)
+	#for p in packed_grid.cells["b"]:
+		#if p != null:
+			#temp_cells["b"].append(p)
+			#
+#
+	#for i in range(grid.points.size()):
+		#pack.cells["i"].append(i)
+	pack.cells["v"] = packed_grid.cells["v"]
+	pack.cells["c"] = packed_grid.cells["c"]
+	pack.cells["b"] = packed_grid.cells["b"]
+	#pack.cells["v"] = temp_cells["v"]
+	#pack.cells["c"] = temp_cells["c"]
+	#pack.cells["b"] = temp_cells["b"]
+	pack.cells["i"] = packed_grid.cells["i"]
+	
+	
+	
+	pack.vertices["p"] = packed_grid.vertices["p"]
+	pack.vertices["v"] = packed_grid.vertices["v"]
+	pack.vertices["c"] = packed_grid.vertices["c"]
+
 	pass
 	
 	
@@ -660,7 +704,7 @@ func add_new_point(i, x, y, height, new_cells):
 # This function is to isolate the implementaton of Azgaars Fantasy Map
 func generate_azgaar_style_fantasy_map(world_selected: String):
 		heightmap_generator = HeightMapGenerator.new(grid, voronoi, world_selected)
-		features = Features.new(grid)
+		features = Features.new(grid, pack)
 		features.markup_grid(grid)
 		lakes = Lakes.new()
 		map = Map.new()
@@ -673,7 +717,7 @@ func generate_azgaar_style_fantasy_map(world_selected: String):
 		temperature.calculate_temperatures(grid, map)
 		precipitation.generate_precipitation(grid, map)
 		reGraph()
-		#features.markup_grid_packed(grid)
+		#features.markup_grid_packed_new(pack)
 		#features.specify(grid)
 		#grid.print_min_max_values()
 		#var grid_f_size = grid.f.size()
@@ -812,13 +856,16 @@ func _draw()  -> void:
 	if _draw_az_precipitation_map: draw_az_precipitation_map()
 	
 	if _draw_triangle_edges: draw_triangle_edges(points, delaunay)
-	if _draw_packed_triangle_edges: draw_packed_triangle_edges(pack.points, packed_delaunay)
-	
+	#if _draw_packed_triangle_edges: draw_packed_triangle_edges(pack.points, packed_delaunay)
+	if _draw_packed_triangle_edges: draw_packed_triangle_edges(pack.cells["p"], packed_delaunay)
 	if _draw_voronoi_edges: draw_voronoi_edges(points, delaunay)
 	if _draw_points: draw_points()
 	if _draw_packed_points: draw_packed_points()
 	if _draw_voronoi_cell_site_position_data: draw_point_location_data()
 	if _draw_voronoi_points_position_data: draw_voronoi_cell_position_data()
+	
+	if  _draw_triangle_packed_position_data: display_triangle_position_data(pack.cells["p"])
+	elif _draw_triangle_position_data: display_triangle_position_data(points)
 
  	# Display Data points for Azgaar style maps
 	if _display_az_precipitation_data: display_az_precipitation_data()
@@ -1767,7 +1814,14 @@ func draw_packed_points():
 	for point in pack.cells["p"]:
 		draw_circle(Vector2(point[0], point[1]), 2, Color.GREEN)	
 
-
+func display_triangle_position_data(points: Variant):
+	var font : Font
+	font = ThemeDB.fallback_font
+	#for point in pack.cells["p"]:
+	for point in points:
+		var position_string: String = str(point[0]).pad_decimals(1) + ":" + str(point[1]).pad_decimals(1) 
+		draw_string(font,Vector2(point[0], point[1]),position_string , 0, -1, 8, Color.BLACK)
+		pass
 				
 
 

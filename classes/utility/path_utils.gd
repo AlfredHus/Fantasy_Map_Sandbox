@@ -33,17 +33,26 @@ func connect_vertices(feature_ids, feature_type, vertices, starting_vertex, clos
 		# (Assumes that neib_cells has exactly three entries.)
 		var mapped: Array = []
 		for cell in neib_cells:
+			if cell >= feature_ids.size():
+				mapped.append(false)
+			else:
 			#mapped.append(of_same_type(feature_ids, cell, feature_type))
-			mapped.append(feature_ids[cell] == feature_type)
+				mapped.append(feature_ids[cell] == feature_type)
 		var c1 = mapped[0]
 		var c2 = mapped[1]
 		var c3 = mapped[2]
 		
 		# Retrieve the three vertex connections for the current vertex.
 		var v_arr = vertices["v"][current]
+		
 		var v1 = v_arr[0]
 		var v2 = v_arr[1]
-		var v3 = v_arr[2]
+		var v3
+		if v_arr.size() ==2:
+			v3 = -1
+		else:
+		#var v3 = v_arr[2]
+			v3 = v_arr[2]
 		
 		# Decide on the next vertex based on the conditions.
 		if v1 != previous and c1 != c2:

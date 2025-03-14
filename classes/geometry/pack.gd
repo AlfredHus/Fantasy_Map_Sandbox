@@ -35,9 +35,10 @@ var cells: Dictionary = {
 	} 
 
 # vertices data object, contains only voronoi data
-var vertices: Dictionary = {
+var vertices: Dictionary[String, Array] = {
 # vertex coordinates, [x,y]
-	"p": [], # ingeger[][]
+	"p": [], # integer[][]
+	
 # neindexes of cells adjacent to each vertiex. Each vertex has 3 adjacent cells
 	"v": [], # integer[][]
 # indexes of vertices adjacent to each vertex. Most vertexes have 3 neighboring
@@ -47,6 +48,8 @@ var vertices: Dictionary = {
 	}
 
 var points: PackedVector2Array 
+
+var points_n: int
 
 # Contains dictionary of features -> islands, lakes and oceans. 
 # Element 0 has no data. 

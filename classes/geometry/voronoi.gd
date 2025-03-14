@@ -94,6 +94,10 @@ var triangle_vertices: Dictionary = {}
 var triangle_edge_coordinates: Dictionary = {}
 var triangle_edge_indexes: Dictionary = {}
 
+var grid_dictionary: Dictionary[int, Array]
+var all_grid_dictionary: Dictionary[int, int]
+var half_edge_dictionary: Dictionary[int, int]
+
 
 func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundary: Rect2) -> void:
 	# The boundary [width,height] of the grid that the 
@@ -118,11 +122,14 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 	
 	var count = 0
 	var cell_points: PackedVector2Array
-	
+	var counter = 0
+	var counter_1 = 0
+	print ("START")
 	# The next code block iterates through all of the triangle indexes as 
 	# defined in delaunay.triangle to build the dictionarys, using the
 	# the triangle index as a index into the dictionary array. 
 	for e in delaunay.triangles.size():
+		counter_1 += 1
 		e_temp.append(e) # DEBUG
 		# This line is getting the edge index of the delaunay.triangles, except
 		# the triangle points are in a different order. For example, if the first
@@ -138,12 +145,19 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 		# the same triplet ordering as defined in delaunay.triangles, then this
 		# would of been cells{"c"].[11]..
 		var p: int = delaunay.triangles[next_half_edge(e)]
+		all_grid_dictionary[e] = p
 
 		# If you store p as an array, it will contain the same indexes as 
 		# delaunay.triangles. so p_temp = delaunay.triangles
 		p_temp.append(p) # DEBUG
-
+		#if p >= points_n:
+			#print ("Failure: ", p)
+			#var temp22 = grid.cells["c"][p]
+			#pass
 		if p < points_n and not grid.cells["c"][p]:
+		#if p < points_n:
+			pass
+			counter += 1
 			# Here we get the edge indexes arount a point (in this case "e")
 			# So we get the edges around edge "1", then edge "2", etc until we 
 			# have iterated through all of the edge indexes in delaunay.triangle
@@ -160,7 +174,10 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 			#Javascript Code:  this.cells.c[p] = edges.map(e => this.delaunay.triangles[e]).filter(c => c < this.pointsN)
 			# adjacent cells
 			grid.cells["c"][p] =  edges.map(func(e): return delaunay.triangles[e]).filter(func(c): return c < points_n)								
-			
+			var temp = grid.cells["c"][p]
+			grid_dictionary[p] = grid.cells["c"][p]
+			count += 1
+			#print ("voronoi: grid.cells[c][p]: ", grid.cells["c"][p] )
 			# Javasccript Code:  this.cells.b[p] = edges.length > this.cells.c[p].length ? 1 : 0
 			# near border cells
 			grid.cells["b"][p] = 1 if edges.size() >grid.cells["c"][p].size() else 0
@@ -172,14 +189,45 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 		# neighboring vertices
 			grid.vertices["v"][t] = triangle_adjacent_to_triangle(delaunay, t)
 		# adjacent cells
-			grid.vertices["c"][t] = points_of_triangle_1(points, delaunay, t)            
+			grid.vertices["c"][t] = points_of_triangle_1(points, delaunay, t)     
+		else:
+			#print ("Failure: ", p)
+			#var temp22 = grid.cells["c"][p]
+			pass       
+	#print ("grid_c: ", grid.cells["c"])
 	
+	#for c in grid.cells["c"]:
+		#print ("c: ", c)
+		#if c == null:
+			#print ("null value found in c: ")
+	#for e1 in delaunay.triangles.size():
+		#var p = delaunay.triangles[next_half_edge(e1)]
+		#if p < points_n:
+			#print ("grid.cells[v][p] = ", p, ": ", grid.cells["v"][p])
+	
+	#print ("grid.cells[v] = ", grid.cells["v"])
+	
+	var grid_1 = grid_dictionary.size()	
+	grid_dictionary.sort()
+	
+	#print ("voronoi: Grid_dictionary = ",  grid_dictionary)
+	all_grid_dictionary.sort()
+	var grid_2 = all_grid_dictionary.size()
+	#print ("voronoi: Grid_dictionary = ",  all_grid_dictionary)
+	half_edge_dictionary.sort()
+	var grid_3 = half_edge_dictionary.size()
+	print ("voronoi: Grid_dictionary = ",  half_edge_dictionary)
+		
 	setup_voronoi_cells(points, delaunay)
 	associate_sites_with_voronoi_cell(points)
 	setup_triangle_centers(points, delaunay)
 	setup_triangle_edges(points, delaunay)
 	create_triangle_edges_dictionary(points, delaunay)
 	
+
+	
+
+
 func _ready() -> void:
 
 	pass # Replace with function body.
@@ -301,6 +349,9 @@ func setup_triangle_centers(points: PackedVector2Array, delaunay: Delaunator):
 # Moves to the next half-edge of a triangle, given the current
 # half-edges index
 func next_half_edge(e : int) -> int:
+	var temp = e - 2 if e % 3 == 2 else e + 1
+	#print ("next_half_edge: ", temp)
+	half_edge_dictionary[e] = temp
 	return e - 2 if e % 3 == 2 else e + 1
 
 # Moves to the previous half-edge of a triangle, given the current
@@ -358,7 +409,7 @@ func triangle_circumcenter(triangle_points: PackedVector2Array , delaunay: Delau
 	var circumcenter_radius: int
 	return circumcenter(vertices[0], vertices[1], vertices[2])
 
-func f6triangle_center(triangle_points: PackedVector2Array , delaunay: Delaunator, triangle_index: int) -> Array:
+func triangle_circumcenter_array(triangle_points: PackedVector2Array , delaunay: Delaunator, triangle_index: int) -> Array:
 	var vertices: PackedVector2Array = points_of_triangle(triangle_points, delaunay, triangle_index)
 	var circumcenter_radius: int
 	var vector_result: Vector2 = circumcenter(vertices[0], vertices[1], vertices[2])
@@ -614,8 +665,12 @@ func triangle_adjacent_to_triangle(delaunay: Delaunator, t: int) -> Array:
 	var adjacent_triangles = []
 	for e in edges_of_triangle(t):
 		var opposite: int = delaunay.halfedges[e]
+		#if opposite == -1:
+			#print ("-1")
 		if opposite >= 0:
 			adjacent_triangles.append(triangle_of_edge(opposite))
+		#else:
+			#adjacent_triangles.append(-1)
 	return adjacent_triangles;		
 	
 func triangles_around_point(delaunay: Delaunator, start: int) -> PackedInt32Array:
