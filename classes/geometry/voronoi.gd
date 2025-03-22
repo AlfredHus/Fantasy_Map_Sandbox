@@ -124,7 +124,7 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 	var cell_points: PackedVector2Array
 	var counter = 0
 	var counter_1 = 0
-	print ("START")
+	#print ("START")
 	# The next code block iterates through all of the triangle indexes as 
 	# defined in delaunay.triangle to build the dictionarys, using the
 	# the triangle index as a index into the dictionary array. 
@@ -207,22 +207,23 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 	
 	#print ("grid.cells[v] = ", grid.cells["v"])
 	
-	var grid_1 = grid_dictionary.size()	
-	grid_dictionary.sort()
-	
-	#print ("voronoi: Grid_dictionary = ",  grid_dictionary)
-	all_grid_dictionary.sort()
-	var grid_2 = all_grid_dictionary.size()
-	#print ("voronoi: Grid_dictionary = ",  all_grid_dictionary)
-	half_edge_dictionary.sort()
-	var grid_3 = half_edge_dictionary.size()
-	print ("voronoi: Grid_dictionary = ",  half_edge_dictionary)
+	#var grid_1 = grid_dictionary.size()	
+	#grid_dictionary.sort()
+	#
+	##print ("voronoi: Grid_dictionary = ",  grid_dictionary)
+	#all_grid_dictionary.sort()
+	#var grid_2 = all_grid_dictionary.size()
+	##print ("voronoi: Grid_dictionary = ",  all_grid_dictionary)
+	#half_edge_dictionary.sort()
+	#var grid_3 = half_edge_dictionary.size()
+	#print ("voronoi: Grid_dictionary = ",  half_edge_dictionary)
 		
 	setup_voronoi_cells(points, delaunay)
 	associate_sites_with_voronoi_cell(points)
 	setup_triangle_centers(points, delaunay)
 	setup_triangle_edges(points, delaunay)
 	create_triangle_edges_dictionary(points, delaunay)
+	pass
 	
 
 	
@@ -303,11 +304,19 @@ func setup_voronoi_cells(points: PackedVector2Array, delaunay):
 			# Store the vertices of each Voronoi and use the cell_count
 			# increment as its id.
 			#voronoi_cell_dict[cell_count] = voronoi_cell
+			if (p == 0):
+				pass
+			if voronoi_cell_dict.find_key(0):
+				print ("Voronoi Dict Key found")
 			voronoi_cell_dict[p] = voronoi_cell
 
 			cell_count += 1
 			
+			
+	#print ("setup_voronoi_cells = ", voronoi_cell_dict)
 	# Store the voronoi cell indexes for each voronoi site.		
+	if voronoi_cell_dict.find_key(0):
+		print ("Voronoi Dict Key found")
 	var index: int = 0
 	for point in points:
 		#voronoi_site_indexes.append(index)

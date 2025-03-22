@@ -49,6 +49,8 @@ var vertices: Dictionary[String, Array] = {
 
 var points: PackedVector2Array 
 
+var all_points: PackedVector2Array 
+
 var points_n: int
 
 # Contains dictionary of features -> islands, lakes and oceans. 

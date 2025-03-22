@@ -23,7 +23,7 @@ extends Node
 ## Does not include the boundary points.
 var points: PackedVector2Array 
 ## Contains all of the points, including the boundary points. 
-#var all_points: PackedVector2Array 
+var all_points: PackedVector2Array 
 ## The interior boundary are on the inside of the grid.
 ##  Off-canvas points coordinates used to cut the diagram approximately by 
 ## canvas edges.  Performs a form of pseudo-clipping of the polygons
@@ -203,19 +203,35 @@ func set_jittered_grid_points() -> PackedVector2Array:
 	print ("Number of Random points (jittered grid): ", points.size())	
 	return points
 	
-	
+## 
+## Sets up the points for the delauanay and voronoi. Generates the points 
+## and the exterior boundary points.
+## [br]
+## [b]Modified Class Members[/b][br]
+## PackedVector2Array[member Grid.points][br]
+## The jittered points are stored in [code]Grid.points[/code]
+## [br]
+## Integer: [member Grid.points_n][br]
+## The number of jittered points that are generated. This value does not include 
+## the exterior boundary points.
+## [br]
+## PackedVector2Array[member Grid.exterior_boundary_points][br]
+## The exterior boundary points are points that are outside of the grid area. 
+# Used for  pseudo-clipping of the polygons.
+## [br]
+## [b]Note:[/b] Only used for Azgaar style maps
 func place_points():
 	# The boundary points on the grid which are outside the voronoi cell grid.
+	# We pass in the grid area which is the Rect2 area size and the spacing
 	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, spacing)
-	# The points returned do not contain the boundary points.
+	# The points returned do not contain the boundary points, only the jittered points.
+	# We pass in the Grid members: width, height and spacing.
 	points =  get_jittered_grid(width, height, spacing)
-	points_n = points.size() 
-	# Combine points with exterior_boundary_points
-	# Set up the cells.i index.
+	# The number of points generated. Does not include the boundary points.
+	# Set up the cells["i"] index.
 	for index in range(points.size()):
 		cells["i"].append(index)
 
-	
 ## Generates points using poisson distributrion for the grid[br]
 ## Returns the generated [code]points[/code]
 func set_points_by_poisson_distribution(sampling_min_distance, sampling_poisson_max_tries):
@@ -281,9 +297,9 @@ func set_initial_points(initial_point_size: int) -> PackedVector2Array:
 		Vector2(320, 170), Vector2(400, 270), Vector2(220, 270), Vector2(530, 50), Vector2(100, 80), Vector2(300, 30)
 	])
 	points_n = initial_points_large.size()
-	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, 9.47) # DEBUG:AH
-	for i in exterior_boundary_points:
-		initial_points_large .append(i)
+	#exterior_boundary_points = generate_exterior_boundary_points(_grid_area, 9.47) # DEBUG:AH
+	#for i in exterior_boundary_points:
+		#initial_points_large .append(i)
 	
 	if initial_point_size == _InitialPointSize.LARGE:
 		return initial_points_large
@@ -294,11 +310,18 @@ func set_initial_points(initial_point_size: int) -> PackedVector2Array:
 	else:
 		return initial_points_large # default value
 	
-## Add points along the outside of the map edge to pseudo-clip voronoi cells[br]
+## Add points along the outside of the map edge to pseudo-clip thevoronoi cells[br]
+##
 ## Ported from Azgaars code. This is the getBoundaryPoints() function. I
 ## renamed it to keep the naming scheme consistent with the generate_interior..
 ## function
 ## [url]https://github.com/Azgaar/Fantasy-Map-Generator/blob/23f36c3210d583c32760ddde3c5e6c65ecc8ab52/utils/graphUtils.js[/url]
+## [br]
+## [param Rect2: area] - The boundary area that contains the points. 
+## [param float: spacing] - The spacing between the points
+## [br]
+## Returns the generated points as a [code]PackedVector2Array[/code]
+
 func generate_exterior_boundary_points(area: Rect2, spacing: float) -> PackedVector2Array:
 	#var offset: int = roundi(-1 * spacing)
 	var offset: int = GeneralUtilities.rn(-1 * spacing)
@@ -324,7 +347,7 @@ func generate_exterior_boundary_points(area: Rect2, spacing: float) -> PackedVec
 		exterior_boundary_points.append(Vector2(width + offset, y))
 		step += 1
 
-	return exterior_boundary_points		
+	return exterior_boundary_points	
 
 ## Add points on the inside edge of the map edge.
 ## Ported from mapgen4: redblobgames
@@ -366,16 +389,15 @@ func generate_interior_boundary_points(area: Rect2) -> PackedVector2Array:
 	
 	
 ## Gets points on a regular square grid and jitters. Does the same thing as 
-## Possion Disk Sampling. The main diference is you can set the points to be 
-## put ont the rectangle rather than having the Possion deciding on the number 
+## Possion Disk Sampling. The main difference is you can set the points to be 
+## put on the rectangle rather than having the Possion deciding on the number 
 ## of points.
 ## [br]
 ## [param width and height] set the area boundary for the points
 ## [br]
 ## The points are spaced apart [param spacing] distance
 ## [br]
-## Returns the generated [code]points[/code]
-##
+## Returns the generated [code]points[/code] as a [code]PackedVector2Array[/code]
 func get_jittered_grid(width, height, spacing) -> PackedVector2Array:
 	var radius: float = spacing / 2.0 # square radius
 	var jittering: float = radius * 0.9; # max deviation

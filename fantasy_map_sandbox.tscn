@@ -1,15 +1,15 @@
-[gd_scene load_steps=2 format=3 uid="uid://cxglm7a4qsn7q"]
+[gd_scene load_steps=3 format=3 uid="uid://cxglm7a4qsn7q"]
 
 [ext_resource type="Script" uid="uid://dsupr2g7tvxxr" path="res://main.gd" id="1_l63tg"]
+[ext_resource type="Script" uid="uid://doif7w3wwsr4t" path="res://data_overlay.gd" id="2_tru4q"]
 
 [node name="FantasyMapSandbox" type="Node2D"]
 script = ExtResource("1_l63tg")
 _jittered_grid = true
-_default_seed_points = 1000
-_draw_packed_triangle_edges = true
-_draw_packed_points = true
-_cells_desired = 500
+_draw_voronoi_edges = true
+_cells_desired = 1000
 area = Rect2(0, 0, 1152, 648)
 _selected_world = 5
-_draw_fantasy_map_elevations = true
-_draw_triangle_packed_position_data = true
+
+[node name="DataOverlay" type="Node2D" parent="."]
+script = ExtResource("2_tru4q")

@@ -18,18 +18,19 @@ extends Node2D
 # consisting of all points of the plane closer to that seed than to any other.
 # 
 # Voronoi Cell: This is a closed polygon that is defined by 3 or more vertices.
-# Each Voronoi Cell will cntain of the initial points that were used as a 
+# Each Voronoi Cell will contain the initial points that were used as a 
 # seed to create the Delaunay Triangulation.
 #
 # IMPORTANT STRUCTURES AND VARIABLES
 # ==================================
 # voronoi_cell_sites: A  PackedVector2Array() that will hold the associated point
-# for that Voronoi Cell. TThe array contains the cooridinate of the point that
+# for that Voronoi Cell. TThe array contains the coordinate of the point that
 # is owned by the Voronoi Cell. The location of the point in the Array is an 
 # index into the Voronoi Cell Dict dictionary that wil contain the vertices
 # of that voronoi cell. This associates each point to its Voronoi Cell.
 #
 # points: The points are the seeds used to create the Delaunay Triangulation.
+#
 # voronoi_cell_dict: A dictionary that contains the id of the Voronoi Cell (key)
 # and the vertices that make up the voronoi cell. This dictionary has an 
 # association with the voronoi_cell_sites array as described in the voronoi_cell
@@ -46,6 +47,8 @@ extends Node2D
 # If you do not set _random_points, _poisson_distribution
 # or _jittereed_grid to true, it will use the default_seed_points.
 
+#@onready var data_overlay = $DataOverlay
+
 ################################ Imports ######################################
 ###############################################################################
 const MapRegionScene := preload("res://map_region.tscn")
@@ -56,10 +59,12 @@ const MapRegionScene := preload("res://map_region.tscn")
 # TODO: Move some of these to a UI at some point.
 ## Use this to set a specific set of points for debugging purposes
 @export var _random_points: bool = false
-## Use Poisson when you want to generate a real vornonoi. 
+## Use Poisson when you want to generate a voronoi only.
 @export var _poisson_distribution: bool = false
 ## Use jittered points when creating a Azgaar style fantasy map.
 @export var _jittered_grid: bool = false
+## Use the initial points. Normally used for testing.
+@export var _initial_points: bool = false
 ## Use this for getting the points from an image. NOTE: Does not currently work.
 @export var _points_from_image: bool = false
 ## When using random points, you need to set the seed to the number of points
@@ -281,6 +286,10 @@ var boundary_points := PackedVector2Array()
 func _ready()  -> void:
 #   viewpoint width and height are set in the project settings. General -> Window -> Viewport Height
 #   and Viewport Width. 
+	
+
+	
+	
 	size = get_viewport().size
 	print ("Viewport Size: ", size.x, ":", size.y)
 		
@@ -297,7 +306,7 @@ func _ready()  -> void:
 		_time_now  = Time.get_ticks_msec()
 		#grid = Grid.new(_cells_desired, area)
 		#points = grid.set_jittered_grid_points()
-		calculateVoronoi()
+		calculate_voronoi()
 		_time_elapsed = Time.get_ticks_msec() - _time_now
 		print("Jittered Grid creation took %s seconds" % (float(_time_elapsed) / 1000))
 	elif _points_from_image:
@@ -347,10 +356,12 @@ func _ready()  -> void:
 		## Add a border to the points to pseudo-clip the voronoi diagram
 		#for i in self.boundary_points:
 			#points.append(i)
-	else:
+	elif _initial_points:
 		grid = Grid.new(_cells_desired, area)
 		points = grid.set_initial_points(_InitialPointSize.LARGE)
 		print("Initial points:", points.size())
+	else:
+		print ("WARNING! No points selected")
 		
 
 	
@@ -358,14 +369,15 @@ func _ready()  -> void:
 	# When you call the Delaunator constructor, it will start _init first and then call 
 	# the actual constructor
 	# The constructor will return a new delaunay traingulation of 2D points
-	
-	#if !_draw_fantasy_map_elevations:
-		# Set up the delaunay triangulation
-	#delaunay = Delaunator.new(points)
+	#
+	#if !_draw_fantasy_map_elevations && !_jittered_grid:
+	if _poisson_distribution || _random_points || _initial_points:
+		##Set up the delaunay triangulation
+		delaunay = Delaunator.new(points)
 		## Set up the voronoi structure
-	#voronoi = Voronoi.new(points, grid, delaunay, area)
+		voronoi = Voronoi.new(points, grid, delaunay, area)
 	
-	voronoi.setup_centroids()
+	#voronoi.setup_centroids()
 	#print ("Centroids1: ", voronoi.centroids1)
 	
 	elevation = Elevation.new(voronoi)
@@ -403,6 +415,7 @@ func _ready()  -> void:
 		world_choices.FRACTIOUS:
 			world_selected = "fractious"
 	
+	#6data_overlay.test(voronoi, grid)
 	# Generate Azgaars Fantasy Map
 	#if _jittered_grid or _poisson_distribution == true: generate_fantasy_map(world_selected)
 	if _jittered_grid == true: generate_azgaar_style_fantasy_map(world_selected)
@@ -482,7 +495,7 @@ func _ready()  -> void:
 	#var top_left_corner = voronoi._top_left_corner(points, area)
 	#print ("=================> top Left Corner: ", top_left_corner, "Coords: ", points[top_left_corner])
 	
-	var voronoi_vertices: PackedVector2Array = voronoi.add_voronoi_vertices(points, delaunay)
+	#var voronoi_vertices: PackedVector2Array = voronoi.add_voronoi_vertices(points, delaunay)
 
 
 	#
@@ -522,7 +535,7 @@ func _ready()  -> void:
 # the azgaar map generation.
 # grid.cells["i"] is set up in grid.place_points
 # all_points contains all points, inncluding the boundary boudary points
-func calculateVoronoi():
+func calculate_voronoi():
 	grid = Grid.new(_cells_desired, area)
 	# Place points sets up the boundary points and the jittered points
 	# We will combine later in this function and pass the combined
@@ -532,22 +545,80 @@ func calculateVoronoi():
 	#points = grid.set_jittered_grid_points()
 	# These are the points before appending the boundary points. 
 	points = grid.points
+	grid.points_n = grid.points.size()
+
+	
+	var all_points: Array
+	all_points.append_array(grid.points)
 	
 	# Append the boundary points to the end of the points array. We can then 
 	# access the points excluding the boundary points by using grid.points_n
 	# which is the size of the points minus the boundary points.
-	points.append_array(grid.exterior_boundary_points)
+	#points.append_array(grid.exterior_boundary_points)
+	all_points.append_array(grid.exterior_boundary_points)
+	
+	grid.all_points = all_points
 	# Set up the delaunay triangulation
-	delaunay = Delaunator.new(points)
+	delaunay = Delaunator.new(all_points)
 	# Set up the voronoi structure.
 	# The voronoi constructor will set up the cells and vertices
 	# dictionarys and assign them to the grid class
 	# We pass voronoi the the combined points (points + boundary points)
 	# and the size of the points minus the boundary points. In voronoi, the 
 	# grid.cells dictionary only contains the points - the  boundary points.
-	voronoi = Voronoi.new(points, grid, delaunay, area)
+	voronoi = Voronoi.new(all_points, grid, delaunay, area)
+	pass
+	
+
+# points contain the points before any bounaries are added.
+# boundary contains the boundary points that are appended to all_points
+# which is what is used to create the delaunay triangles and voronoi diagram.
+func calculate_voronoi_new(grid: Grid, points: Array, boundary: Array) -> Dictionary:
+	var packed_grid: Grid
+	var temp = points.size()
+	#packed_grid = Grid.new(points.size(), area)
+	packed_grid = Grid.new(_cells_desired, area)
+	packed_grid.points_n = points.size()
+	pack.points_n = points.size()
+	
+	# Store the number of points before appending the boundary
+	grid.points_n = points.size()
+	
+	var all_points: Array
+	all_points.append_array(points)
+	#all_points.append_array(boundary)
+	#points.append_array(boundary)
+	#var temp1 = points.size()
+	
+	# Calculate Delaunay triangulation
+	#var vector_points = PackedVector2Array(points)
+	var vector_points: PackedVector2Array
+	# Brute foce the conversion to packedvector2array from array
 	
 	
+	for p in all_points:
+		vector_points.append(Vector2(p[0], p[1]))
+	pack.all_points = vector_points
+	#print ("Vector_points: ", vector_points)
+	#packed_delaunay = Delaunator.new(points)
+	packed_delaunay = Delaunator.new(vector_points)
+	pack.points = vector_points
+	
+	
+
+	# Calculate Voronoi diagram
+	#packed_voronoi = Voronoi.new(points, packed_grid, packed_delaunay, area)
+	packed_voronoi = Voronoi.new(vector_points, packed_grid, packed_delaunay, area)
+
+	# Extract cells and vertices
+	var cells = packed_grid.cells
+	cells["i"] = []  # Array of indexes
+	for i in range(points.size()):
+		cells["i"].append(i)
+	
+	var vertices = packed_grid.vertices
+
+	return {"cells": packed_grid.cells, "vertices": packed_grid.vertices}
 # Calculate Delaunay and then Voronoi diagram for the packed grid.
 func calculate_voronoi_packed(points: Array, boundary: Array) -> Dictionary:
 	var packed_grid: Grid
@@ -558,7 +629,7 @@ func calculate_voronoi_packed(points: Array, boundary: Array) -> Dictionary:
 	pack.points_n = points.size()
 	var all_points: Array
 	all_points.append_array(points)
-	#all_points.append_array(boundary)
+	all_points.append_array(boundary)
 	#points.append_array(boundary)
 	#var temp1 = points.size()
 	
@@ -857,8 +928,18 @@ func _draw()  -> void:
 	
 	if _draw_triangle_edges: draw_triangle_edges(points, delaunay)
 	#if _draw_packed_triangle_edges: draw_packed_triangle_edges(pack.points, packed_delaunay)
-	if _draw_packed_triangle_edges: draw_packed_triangle_edges(pack.cells["p"], packed_delaunay)
+	# pack cells are arrays, so we need to convert them to a packed array for
+	# the draw functions. Part of the todo transition away from packed arrays
+	# when possible
+	#var packed_points: PackedVector2Array = array_to_packed_vector2(pack.cells["p"])
+	
+	if _draw_packed_voronoi_cells: draw_packed_voronoi_cells1(pack.cells["p"], packed_delaunay)
+	#print (pack.cells["p"])
+	#if _draw_voronoi_edges: draw_voronoi_edges(points, delaunay)
+	#if _draw_packed_triangle_edges: draw_packed_triangle_edges(packed_points, packed_delaunay)
 	if _draw_voronoi_edges: draw_voronoi_edges(points, delaunay)
+	elif _draw_packed_triangle_edges: draw_packed_triangle_edges(pack.cells["p"], packed_delaunay)
+	
 	if _draw_points: draw_points()
 	if _draw_packed_points: draw_packed_points()
 	if _draw_voronoi_cell_site_position_data: draw_point_location_data()
@@ -883,6 +964,14 @@ func _draw()  -> void:
 	#if (selected_index != -1 and _draw_edges_around_point): draw_triangles_around_point(points, delaunay, selected_index)
 	
 	save_image()
+
+
+func array_to_packed_vector2(arr: Array) -> PackedVector2Array:
+	var packed_array: PackedVector2Array = PackedVector2Array()
+	for vec in arr:
+		if vec is Array and vec.size() == 2:  # Check if it's a tuple (2-element array)
+			packed_array.push_back(Vector2(vec[0], vec[1]))  # Convert to Vector2
+	return packed_array
 
 # Draw lines from the selected point to its neighbors.
 func draw_neighbors():
@@ -1021,6 +1110,7 @@ func draw_triangle_edges(points: PackedVector2Array, delaunay: Delaunator):
 			draw_line(p, q, Color.RED, 1.0)
 	
 func draw_packed_triangle_edges(points: PackedVector2Array, delaunay: Delaunator):
+	var packed_points: PackedVector2Array = array_to_packed_vector2(pack.cells["p"])
 	var seen : PackedVector2Array
 	for e in delaunay.triangles.size():
 		var temp_e = delaunay.halfedges[e] # used for DEBUG purposes
@@ -1302,14 +1392,14 @@ func draw_voronoi_cells1(points, delaunay):
 			
 			# This is not part of draw voronoi cell. It is here to help me
 			# how the voronoi cell is drawm
-			color = Color(randf(), randf(), randf(), 1)
-			for t in triangles:
-				#print ("t = ", t)
-				var t_points = voronoi.points_of_triangle(points, delaunay, t)
-				t_points.append(t_points[0])
-				draw_polyline(t_points, color)
-				#print (t_points)
-				pass
+			#color = Color(randf(), randf(), randf(), 1)
+			#for t in triangles:
+				##print ("t = ", t)
+				#var t_points = voronoi.points_of_triangle(points, delaunay, t)
+				#t_points.append(t_points[0])
+				#draw_polyline(t_points, color)
+				##print (t_points)
+				#pass
 				#draw_triangles_around_point(points, delaunay, e)
 				#draw_filled_in_triangles_around_point(points, delaunay, t)
 				#draw_triangles_around_point(points, delaunay, e)
@@ -1333,6 +1423,7 @@ func draw_voronoi_cells1(points, delaunay):
 			#draw_circle(Vector2(result[0], result[1]), 6, Color.DARK_GREEN)
 
 func draw_packed_voronoi_cells1(points, delaunay):
+	var packed_points: PackedVector2Array = array_to_packed_vector2(points)
 	var seen = [] # used to keep track of which half-edges have been seen (i.e., iterated over)
 	var count_voronoi = 0
 	# iterate over all of the triangles
@@ -1577,6 +1668,7 @@ func draw_voronoi_fantasy_elevations():
 	var elevation_value: int 
 	var font : Font
 	font = ThemeDB.fallback_font
+	print ("draw_voronoi_fantasy_elevations = ", voronoi_cell_dict)
 	
 	#for key in voronoi_cell_dict.keys():
 	for key in grid.points_n:
@@ -1584,6 +1676,7 @@ func draw_voronoi_fantasy_elevations():
 		#elevation_value = heightmap_generator.heights[key]
 		elevation_value = grid.heights[key]
 		color = elevation.elevation_color_azgaar_colors(elevation_value)
+		var temp = voronoi_cell_dict[key]
 		draw_polygon(voronoi_cell_dict[key], PackedColorArray([color]))	
 		
 		# Use the polylabel position to display the boundary data on the map
@@ -1805,10 +1898,15 @@ func draw_voronoi_cells_convex_hull(points: PackedVector2Array, delaunay: Delaun
 
 
 # Used to draw the points for a voronoi cell. It will display the location
-# of the point and its location in the centroid array	
+# of the point and its location in the centroid array.
+# Draws both the points and the exterior boundary.
 func draw_points():
 	for point in points:
-		draw_circle(point, 4, Color.RED)
+		draw_circle(point, 2, Color.RED)
+		
+	for boundary in grid.exterior_boundary_points:
+		draw_circle(boundary, 2, Color.GREEN)
+	pass
 		
 func draw_packed_points():
 	for point in pack.cells["p"]:
