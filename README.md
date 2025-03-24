@@ -15,32 +15,6 @@ https://www.redblobgames.com - A whole lot of really good information on a varie
 ## Azgaar Fantasy Map Generator Blog
 https://azgaar.wordpress.com - Really good information on how Azgaar built his Fanasty Map Generator and various tecniques with good external references.
 
-# Attribution
-For source code used, either I used the project in its entirety, or I used parts of the code. In the code itself I document the exact file or snippet I used so you can take a look at the exact code rather than searching the original source code repository.
-## Delaunator and Voronoi (License: MIT)
-Deluanator: https://github.com/Volts-s/Delaunator-GDScript-4
-   The Delaunator code along with the Voronoi support code and drawing code is used with some modifications.
-   The code from Volt-s is a fork of hiulit's code at: https://github.com/hiulit/Delaunator-GDScript
-   The original Delaunator code written in Javascript is here: https://github.com/mapbox/delaunator
-   For additional documentation on the Voronoi code, you can take a look at the Delaunator guide:
-   https://mapbox.github.io/delaunator/
-## Poisson Disk Sampling (License MIT)
-PossionDiskSampling: https://github.com/stephanbogner/godot-poisson-sampling
-   The poisson disk sampling code and some of the demo code.
-## TinyQueue (License: ISC)
-tinyqueue code ported from : https://github.com/mourner/tinyqueue/tree/main
-   Port of the code to gdscript. Used some of the test code as well.
-## lineclip (License: ISC)
-lineclip: Port of javascript: https://github.com/mapbox/lineclip
-   Port of the code to gdscript. Used some of the test code as well
-## Polylabel (License: ICS)
-Polylabel: Code ported from: https://github.com/mapbox/polylabel
-   Port of the code to gdscript. Used some of the test code as well
-## Azgaar Fantasy Map Generator (License MIT)
-	Port of some of Azgaars Fantasy Map Code: https://github.com/Azgaar/Fantasy-Map-Generator
-## RedBlobGames Mapgen4 (License: Apache-2.0)
-	Port of some of the Mapgen code: https://github.com/redblobgames/mapgen4/blob/master/dual-mesh/create.ts
-## D3.Polygon  (License: ICS)
-	Port of some of the D3 Polygon code: https://d3js.org/d3-polygon, specifically area and centroid.
-## ClickableMap (MIT License)
-	A clickable voronoi cells implementation: https://github.com/t-karcher/ClickableMap
+# Attribution (Third Party Software Used)
+For third party software used, either I used the project in its entirety, or I used parts of the code. In the code itself I document the exact file or snippet I used so you can take a look at the exact code rather than searching the original source code repository.
+Refer to the [Wiki][wiki/Attribution-(Third-Party-Software)] for the third party software used and lincese details.
