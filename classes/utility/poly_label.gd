@@ -22,7 +22,7 @@ func custom_compare(a: int, b: int) -> int:
 	return b - a
 
 # Finds the polygon pole of inaccessibility
-func get_polylabel(polygon: Array, precision: float = 1.0, debug: bool = false) -> Array:
+func get_polylabel(polygon: Array, precision: float = 1.0, debug: bool = false) -> Array[float]:
 	# Generate initial square cells that fully cover the polygon (with cell size
 	# equal to either width or height, whichever is lower
 	var min_x: float = polygon[0].map(func(p): return p[0]).min()

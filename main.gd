@@ -47,7 +47,11 @@ extends Node2D
 # If you do not set _random_points, _poisson_distribution
 # or _jittereed_grid to true, it will use the default_seed_points.
 
-#@onready var data_overlay = $DataOverlay
+## the data overlay node which allows you to overlay data on the various
+## diagrams
+## NOTE: Currently moving the data overlay functions from main.gd to this
+## node. Work in progress
+@onready var data_overlay = $DataOverlay
 
 ################################ Imports ######################################
 ###############################################################################
@@ -358,7 +362,7 @@ func _ready()  -> void:
 			#points.append(i)
 	elif _initial_points:
 		grid = Grid.new(_cells_desired, area)
-		points = grid.set_initial_points(_InitialPointSize.LARGE)
+		points = grid.set_initial_points(grid.InitialPointSize.LARGE)
 		print("Initial points:", points.size())
 	else:
 		print ("WARNING! No points selected")
@@ -415,7 +419,8 @@ func _ready()  -> void:
 		world_choices.FRACTIOUS:
 			world_selected = "fractious"
 	
-	#6data_overlay.test(voronoi, grid)
+	# Give the voronoi and grid data to the data overlay functions
+	data_overlay.setup(voronoi, grid)
 	# Generate Azgaars Fantasy Map
 	#if _jittered_grid or _poisson_distribution == true: generate_fantasy_map(world_selected)
 	if _jittered_grid == true: generate_azgaar_style_fantasy_map(world_selected)
@@ -545,7 +550,7 @@ func calculate_voronoi():
 	#points = grid.set_jittered_grid_points()
 	# These are the points before appending the boundary points. 
 	points = grid.points
-	grid.points_n = grid.points.size()
+	#grid.points_n = grid.points.size()
 
 	
 	var all_points: Array
@@ -1500,15 +1505,15 @@ func draw_packed_voronoi_cells1(points, delaunay):
 			#draw_number(test_vertice, )
 			#draw_circle(Vector2(result[0], result[1]), 6, Color.DARK_GREEN)
 
-func find_grid_center_point():
-	var size = get_viewport().size
-	print ("Viewport Size: ", size.x, ":", size.y)
-	var x = size.x/2
-	var y = size.y/2
-	
-	var nearest_site = find_nearest_site(Vector2(x,y), delaunay) 
-	var nearest_point = points[nearest_site]
-	pass
+#func find_grid_center_point():
+	#var size = get_viewport().size
+	#print ("Viewport Size: ", size.x, ":", size.y)
+	#var x = size.x/2
+	#var y = size.y/2
+	#
+	#var nearest_site = find_nearest_site(Vector2(x,y), delaunay) 
+	#var nearest_point = points[nearest_site]
+	#pass
 
 
 
@@ -1668,8 +1673,7 @@ func draw_voronoi_fantasy_elevations():
 	var elevation_value: int 
 	var font : Font
 	font = ThemeDB.fallback_font
-	print ("draw_voronoi_fantasy_elevations = ", voronoi_cell_dict)
-	
+
 	#for key in voronoi_cell_dict.keys():
 	for key in grid.points_n:
 		# Draw the voronoi cell with the elevation colors
@@ -1678,6 +1682,7 @@ func draw_voronoi_fantasy_elevations():
 		color = elevation.elevation_color_azgaar_colors(elevation_value)
 		var temp = voronoi_cell_dict[key]
 		draw_polygon(voronoi_cell_dict[key], PackedColorArray([color]))	
+		
 		
 		# Use the polylabel position to display the boundary data on the map
 		# Used for debugging purposes. Displays whether the cell is a 
@@ -1696,6 +1701,8 @@ func draw_voronoi_fantasy_elevations():
 			for p in points.size():
 				if grid.cells["b"][p] == 1:
 					draw_string(font, points[p], "1", 0, -1, 8, Color.BLACK)
+
+	
 	# Display the interior and exterior boundary points. 
 	# Used for debugging purposes
 	if _draw_boundary_data:

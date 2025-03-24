@@ -18,7 +18,8 @@ var points := PackedVector2Array()
 func  before_all():
 	var size = get_viewport().size
 	grid = Grid.new(1000, area)
-	points = grid.set_jittered_grid_points()
+	grid.place_points()
+	points = grid.points
 	delaunay = Delaunator.new(points)
 	voronoi = Voronoi.new(points,grid, delaunay, area)
 	var world_selected: String = "volcano"

@@ -13,3 +13,4 @@ _draw_fantasy_map_elevations = true
 
 [node name="DataOverlay" type="Node2D" parent="."]
 script = ExtResource("2_tru4q")
+_display_az_precipitation_data = true

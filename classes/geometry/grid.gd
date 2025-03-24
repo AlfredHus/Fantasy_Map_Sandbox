@@ -51,32 +51,15 @@ var width: int
 ## Height of the display area
 var height: int
 
-# These set of variables are set up by the Features class used in Azgaar Fantasy
-# Map generation
-## Distance field from water level. 
-## 1, 2, .... - land cells  
-## -1, -2, ... - water cells
-## 0 - unmarked cell
-#var t: Array[int] = []
-# indexes of the features
-#var f: Array[int] = []
-# The indexes for the points (does not include boundary points)
-#var i: Array[int] = []
-## a array of dictionaries for all enclosed entities: islands, lakes and oceans
-## i: integer - feature id starting from 1
-## land: boolean - true if feature is land (height >= 20)
-## border: bool - true if feature touches map border (used to separate lakes
-## from oceans
-## type: String - name of feature, either ocean, island or lake
-
-# Contains dictionary of features for all enclosed entities of original graph: 
-# "islands", "lakes" and "oceans". 
+## Features contains each of the features (a dictionary) for all enclosed 
+## entities of the original graph: 
 var features = []
 
-# Features represent separate locked areas like islands, lakes and oceans.
+# A Feature represents separate locked areas like islands, lakes and oceans.
 # NOTE: The features array is built dynamically. The commented out features
-# dictionary below is just there so I know what elements arein the 
+# dictionary below is just there so I know what elements are in the 
 # features dictionary
+# Each of these features is stoed in the features array, "features"
 #var feature: Dictionary = {
 	# i: integer -  feature id starting from 1
 	# land: bool - true if feature is land (height >= 20)
@@ -84,22 +67,12 @@ var features = []
 	# type: String - feature type, can be "ocean", "island" or `"lake"
 #}
 
-var haven = []
-var harbor = []
-
-var pack: Dictionary = {
-	
-	"haven": [],
-	"harbor": [],
-	"features": [],
-	"t": [],
-	"f": []
-}
-
-# Voronoi cells: v = cell vertices, c = adjacent cells, b = near-border cell
-# cells["v"] contains the vertixes that make up the voronoi cell polygon.
-# The are stoed in the array within the dictionary using the edge id as the
-# index.
+## The cells diuctionary contains data for the voronoi diagram, both the
+## data for the voronoi cell and its vertices
+## Voronoi cells: v = cell vertices, c = adjacent cells, b = near-border cell
+## cells["v"] contains the vertices that make up the voronoi cell polygon.
+## They are stoed in the array within the dictionary using the edge id as the
+## index.
 var cells: Dictionary = {
 	"i": [], # integer[] = cell indexes (depending on cells number)
 # indexes of cell vertices
@@ -121,11 +94,15 @@ var cells: Dictionary = {
 # cells precipitation in unspecified scale
 	"prec": [],
 	} 
-#cells vertices: p = vertex coordinates, v = neighboring vertices, c = adjacent cells
-# vertices["v"] contain the vertices for each triangle in the delaunay 
-# triangulation. They are stored in the array as triplets (3 indexes for each 
-# triangle and are stored using the triangle ID as their position
-# in the array.
+	
+## The vertices dictionary is the data for all of the triangle vertices in 
+## the delaunay diagram.
+## cells vertices: p = vertex coordinates, v = neighboring vertices, 
+## c = adjacent cells.
+## vertices["v"] contain the vertices for each triangle 
+## in the delaunay triangulation. They are stored in the array as 
+## triplets (3 indexes for each triangle and are stored using the triangle ID 
+## as their position in the array.
 var vertices: Dictionary = {
 # vertex coordinates, [x,y]
 	"p": [], # integer[][]
@@ -137,21 +114,30 @@ var vertices: Dictionary = {
 	"c": []  # integer[][]
 	}
 
-#var heights: PackedInt32Array
-# The heights/elevation of each voronoi cell. Ranges from 0 - 100
-# Land is >= 20, water is < 20
+## The heights/elevation of each voronoi cell. Ranges from 0 - 100
+## Land is >= 20, water is < 20
 var heights: Array[int] = []
 
+## The number of points used to create the delaunay and voronoi diagrams. 
+## This number does not include the boundary points.
 var points_n: int
+
+# The initial points are used fore debugging purposes to provide a small
+# set of data. The data is not random and is predetermined. There are three
+# sizes of data that can be used, this enum allows you to choose which 
+# size to use. The default is LARGE. This value is set in the code. 
+# TODO: Decide if the initial points should be set as a export value. 
+enum InitialPointSize {LARGE, MEDIUM, SMALL}
+
+# The spacing between the points before jittering.
+var spacing: float
 
 # PRIVATE VARIABLES
 
-enum _InitialPointSize {LARGE, MEDIUM, SMALL}
 # The area of the rectangle that the points are displayed in.
 var _grid_area: Rect2
-# The spacing between the points before jittering.
-var spacing: float
-	
+
+
 ## Constructor. Create initial grid. 
 ## 
 ## The constructor sets the initial values for the grid, but does not 
@@ -160,48 +146,44 @@ var spacing: float
 ## [br]
 ## [param cells_desired] - the number of points to generate
 ## [br]
-## [param area] - The boundary area that contains the points
-##
+## [param area] - The boundary area that contains the points, the viewport 
+## width and height.
+#
 # In Azgaars code, the placePoints function does the same thing as the
 # _init function here
 # The main difference between _init and placePoints is that the _init function
 # does not set the boundary points or the jittered points. Those two tasks
-# are perfomred by set_jittered_grid_points(). I do this so I can use the grid class 
-# for other non-azgaar map tasks. 
+# are perfomred by set_jittered_grid_points(). I do this so I can use the 
+# grid class for other non-azgaar map tasks. 
 func _init(cells_desired: int, area: Rect2):
 	self.cells_desired = cells_desired
 	_grid_area = area
-	width = area.size.x
+	# width and height are the the size of the rectangle display area
+	width = area.size.x 
 	height = area.size.y
-	# snapped() is used to set the decimal places of the float value to 2
-	#spacing = snappedf(sqrt((width * height) / cells_desired),0.01)
 	spacing = GeneralUtilities.rn(sqrt((width * height) / cells_desired),2)
 	cells_x = floor((width + 0.5 * spacing - 1e-10) / spacing)
 	cells_y = floor((height + 0.5 * spacing - 1e-10) / spacing)
 	
-	
-	
-
 ## Generates [code]cells_desired[/code] jittered points for the grid[br]
 ## Jittered points are used to generate azgaar type maps.[br]
-## Returns the generated [code]points[/code]
-func set_jittered_grid_points() -> PackedVector2Array:
-	points =  get_jittered_grid(width, height, spacing)
-	
-	# set the indexes of the points. Used in the azgaar code only
-	for x in range(points.size()):
-		#i.append(x)
-		cells["i"].append(x)
-	points_n = points.size()
-	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, spacing)
-	for i in exterior_boundary_points:
-			points.append(i)
-	
-	#interior_boundary_points = generate_interior_boundary_points(_grid_area) 
-	#for j in interior_boundary_points:
-		#points.append(j)
-	print ("Number of Random points (jittered grid): ", points.size())	
-	return points
+## Returns the generated [code]points[/code] as a PackedVector2Array
+#func set_jittered_grid_points() -> PackedVector2Array:
+	#points =  get_jittered_grid(width, height, spacing)
+	#
+	## set the indexes of the points. Used in the azgaar code only
+	#for x in range(points.size()):
+		#cells["i"].append(x)
+	#
+	## The number of points before adding the boundary points.	
+	#points_n = points.size()
+	## Generate the boundary points add thenm to the end of the points array.
+	#exterior_boundary_points = generate_exterior_boundary_points(_grid_area, spacing)
+	#for i in exterior_boundary_points:
+			#points.append(i)
+	#
+	#print ("Number of Random points (jittered grid): ", points.size())	
+	#return points
 	
 ## 
 ## Sets up the points for the delauanay and voronoi. Generates the points 
@@ -217,30 +199,49 @@ func set_jittered_grid_points() -> PackedVector2Array:
 ## [br]
 ## PackedVector2Array[member Grid.exterior_boundary_points][br]
 ## The exterior boundary points are points that are outside of the grid area. 
-# Used for  pseudo-clipping of the polygons.
+## Used for  pseudo-clipping of the polygons.
 ## [br]
 ## [b]Note:[/b] Only used for Azgaar style maps
 func place_points():
 	# The boundary points on the grid which are outside the voronoi cell grid.
 	# We pass in the grid area which is the Rect2 area size and the spacing
 	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, spacing)
-	# The points returned do not contain the boundary points, only the jittered points.
+	
+	# The points returned do not contain the boundary points, only the 
+	# jittered points.
 	# We pass in the Grid members: width, height and spacing.
 	points =  get_jittered_grid(width, height, spacing)
-	# The number of points generated. Does not include the boundary points.
-	# Set up the cells["i"] index.
+
+	# The number of points before adding the boundary points.	
+	points_n = points.size()
+	
+	# Set the indexes of the points. Used in the azgaar code only
 	for index in range(points.size()):
 		cells["i"].append(index)
 
 ## Generates points using poisson distributrion for the grid[br]
+## [param sampling_min_distance] is the poisson sampling distance
+## [param sampling_poisson_max_tries} is the number of times to try to place
+## points
 ## Returns the generated [code]points[/code]
 func set_points_by_poisson_distribution(sampling_min_distance, sampling_poisson_max_tries):
 	var pds: PoissonDiscSampling = PoissonDiscSampling.new()	
+	# Generate the points
 	points = pds.generate_points(sampling_min_distance, _grid_area, sampling_poisson_max_tries, Vector2(INF, INF))
+	
+	# Store the number of points before adding the boundary points.
 	points_n = points.size()
+	
+	# The boundary points on the grid which are outside the voronoi cell grid.
+	# We pass in the grid area which is the Rect2 area size and the spacing
 	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, spacing)
 	for i in exterior_boundary_points:
 			points.append(i)
+	
+	# These are the interior boundary points. Used by Red Blob Games maps, which
+	# are not yet implemented.
+	# NOTE: If Red Blob Game maps are not implemented, then this is an 
+	# unecessary extra step. 
 	interior_boundary_points = generate_interior_boundary_points(_grid_area) 
 	for j in interior_boundary_points:
 		points.append(j)		
@@ -251,6 +252,8 @@ func set_points_by_poisson_distribution(sampling_min_distance, sampling_poisson_
 ##
 ## There is no spacing with random points. The values are randomly placed
 ## which can result in clumping of points or large empty spaces.[br]
+## Random points are used for debugging purposes when you want more points
+## than what you can get with the initial points.
 ## [param size] - the number of points to generate
 ## [br]
 ## Returns the generated points
@@ -297,15 +300,12 @@ func set_initial_points(initial_point_size: int) -> PackedVector2Array:
 		Vector2(320, 170), Vector2(400, 270), Vector2(220, 270), Vector2(530, 50), Vector2(100, 80), Vector2(300, 30)
 	])
 	points_n = initial_points_large.size()
-	#exterior_boundary_points = generate_exterior_boundary_points(_grid_area, 9.47) # DEBUG:AH
-	#for i in exterior_boundary_points:
-		#initial_points_large .append(i)
-	
-	if initial_point_size == _InitialPointSize.LARGE:
+
+	if initial_point_size == InitialPointSize.LARGE:
 		return initial_points_large
-	elif initial_point_size == _InitialPointSize.MEDIUM:
+	elif initial_point_size == InitialPointSize.MEDIUM:
 		return initial_points_medium
-	elif initial_point_size == _InitialPointSize.SMALL:
+	elif initial_point_size == InitialPointSize.SMALL:
 		return initial_points_small
 	else:
 		return initial_points_large # default value
@@ -323,7 +323,6 @@ func set_initial_points(initial_point_size: int) -> PackedVector2Array:
 ## Returns the generated points as a [code]PackedVector2Array[/code]
 
 func generate_exterior_boundary_points(area: Rect2, spacing: float) -> PackedVector2Array:
-	#var offset: int = roundi(-1 * spacing)
 	var offset: int = GeneralUtilities.rn(-1 * spacing)
 	var bspacing: float = spacing * 2
 	var width: int = area.size.x - offset * 2 # DEBUG:AH  
@@ -333,7 +332,6 @@ func generate_exterior_boundary_points(area: Rect2, spacing: float) -> PackedVec
 
 	var step: float = 0.5
 	while step < number_x:
-		#var x: int = int(ceil((width * step) / number_x + offset))
 		var x: int = ceil((width * step) / number_x + offset)
 		exterior_boundary_points.append(Vector2(x, offset))
 		exterior_boundary_points.append(Vector2(x, height + offset))
@@ -341,7 +339,6 @@ func generate_exterior_boundary_points(area: Rect2, spacing: float) -> PackedVec
 		
 	step = 0.5
 	while step < number_y:
-		#var y: int = int(ceil((height * step) / number_y + offset))
 		var y: int = ceil((height * step) / number_y + offset)
 		exterior_boundary_points.append(Vector2(offset, y))
 		exterior_boundary_points.append(Vector2(width + offset, y))
@@ -364,7 +361,6 @@ func generate_interior_boundary_points(area: Rect2) -> PackedVector2Array:
 	var H: float = ceil((height - 2 * curvature) / boundaryspacing)
 	
 	# Top and bottom
-	#for q in range(W):
 	var q: float = 0.0
 	while q < W:
 		var t: float = float(q / W)
@@ -376,7 +372,6 @@ func generate_interior_boundary_points(area: Rect2) -> PackedVector2Array:
 
 	# Left and right
 	var r: float = 0.0
-	#for r in range(H):
 	while r < H:
 		var t: float = r / H
 		var dy: float = (height - 2 * curvature) * t
@@ -386,7 +381,6 @@ func generate_interior_boundary_points(area: Rect2) -> PackedVector2Array:
 		r += 1.0
 		
 	return interior_boundary_points
-	
 	
 ## Gets points on a regular square grid and jitters. Does the same thing as 
 ## Possion Disk Sampling. The main difference is you can set the points to be 
@@ -440,34 +434,29 @@ func get_jittered_grid(width, height, spacing) -> PackedVector2Array:
 	
 ## Return cell index on the grid at location [param x] and [param y]
 func find_grid_cell(x: int, y:int):
-	#var temp = floor(min(y / spacing, cells_y - 1.0)) * cells_x + floor(min(x / spacing, cells_x - 1.0))
-	#var temp1 = floor(min(y / spacing, cells_y - 1.0))
-	#var temp2 = floor(min(x / spacing, cells_x - 1.0))
-	#var temp3 = floor(min(y / spacing, cells_y - 1.0)) * cells_x + floor(min(x / spacing, cells_x - 1.0))
-	#
-	#var temp4 = points.find(Vector2(x, y))
-	#var temp5 = find_nearest_site(Vector2(x, y))
-	#
-	#var temp6 = y / spacing
-	#var temp7 = x / spacing
-	#return temp5
 	return floor(min(y / spacing, cells_y - 1.0)) * cells_x + floor(min(x / spacing, cells_x - 1.0))
 	
-# Given a point (Vector2), a cell size, and the grid width (in cells),
-# this function returns the grid cell index for that point.
+## Given a point (Vector2), a cell size, and the grid width (in cells),
+## this function returns the grid cell index for that point.
+## Used for debugging purposes.
 func find_grid_cell_index(x, y) -> int:
 	var cell_x: int = int(x / spacing)
 	var cell_y: int = int(y / spacing)
 	return cell_x + cell_y * cells_x
+
+## Return the position of the center point on the grid as a Vector2.	
+func find_grid_center_point() -> Vector2:
+	var x: float = width/2
+	var y: float = height/2
 	
-func find_grid_center_point():
-	var x = width/2
-	var y = height/2
+	var nearest_site: int = find_nearest_site(Vector2(x,y)) 
+	var nearest_point: Vector2 = points[nearest_site]
 	
-	var nearest_site = find_nearest_site(Vector2(x,y)) 
-	var nearest_point = points[nearest_site]
-	return nearest_site
+	return nearest_point
 	
+## Find the nearest point position to the provided point position.
+## [param position] - the point position to find the nearest point for
+## Returns the position of the nearest point as a Vector2
 func find_nearest_site(position: Vector2) -> int:
 	var min_distance = INF
 	var nearest_index = -1
@@ -478,7 +467,6 @@ func find_nearest_site(position: Vector2) -> int:
 		if distance < min_distance:
 			min_distance = distance
 			nearest_index = i
-	#var first_occurance = delaunay.triangle[1]
 	return nearest_index
 
 ## Prints the min/max values for the cells dictionaries.
@@ -515,7 +503,8 @@ func isLand(i):
 ## filter water cells
 func isWater(i):
 	return heights[i] < 20;
-	
+
+## Return the distance between two points	
 func dist2(x1, y1, x2, y2):
 	return (x1 - x2) ** 2 + (y1 - y2) ** 2
 
