@@ -9,12 +9,8 @@ Any original code from me uses the MIT license: https://github.com/AlfredHus/Fan
 For any open source code that is used, their license is applicable.
 
 # Learning Sites
-Listed here are the sites that provided the learning opportunities. <br/>
-## Red Blob Games
-https://www.redblobgames.com - A whole lot of really good information on a variety of topics specific to maps, hexes, voronoi, etc with good external references.
-## Azgaar Fantasy Map Generator Blog
-https://azgaar.wordpress.com - Really good information on how Azgaar built his Fanasty Map Generator and various tecniques with good external references.
+Check the [wiki](https://github.com/AlfredHus/Fantasy_Map_Sandbox/wiki/Learning-Sites) for sites that I used to help me understand how to create and code the maps.. <br/>
 
 # Attribution (Third Party Software Used)
 For third party software used, either I used the project in its entirety, or I used parts of the code. In the code itself I document the exact file or snippet I used so you can take a look at the exact code rather than searching the original source code repository.
-Refer to the [Wiki](https://github.com/AlfredHus/Fantasy_Map_Sandbox/wiki/Attribution-(Third-Party-Software)) for the third party software used and lincese details.
+Refer to the [Wiki](https://github.com/AlfredHus/Fantasy_Map_Sandbox/wiki/Attribution-(Third-Party-Software)) for the third party software used and license details.
