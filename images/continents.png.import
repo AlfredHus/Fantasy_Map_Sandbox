@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dsjqau52ax7ul"
-path="res://.godot/imported/TestImage.png-46828489dbede5e40bd037fb25eb00e3.ctex"
+uid="uid://ojurv7bqr7q7"
+path="res://.godot/imported/continents.png-fcca51b74032addf336e7446b3c666fe.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://TestImage.png"
-dest_files=["res://.godot/imported/TestImage.png-46828489dbede5e40bd037fb25eb00e3.ctex"]
+source_file="res://images/continents.png"
+dest_files=["res://.godot/imported/continents.png-fcca51b74032addf336e7446b3c666fe.ctex"]
 
 [params]
 

@@ -3,6 +3,15 @@ The Fantasy Map Sandbox is a work in progress (WIP) for me to learn Godot and GD
 
 Since it is a learning project, the code is messy, has alot of code I stopped using and haven't removed yet, code that may raise an eyebrow or two and the whole thing in a constant state of change. I also have alot of inline comments to help me remember things I did and to explain to my future self why I did something.
 
+# Example Screenshots
+A couple of screenshots to see examples of the outputs.
+
+## Voronoi Diagram
+![Screenshot of a voronoi diagram using poisson disk sampling for the points. Colors are random](/res/images/voronoi_with_poisson.png)
+
+## Azgaar Style Map - Continues
+![Screenshot of a n Azgaar style map using the Continents Template.](/res/images/continents.png)
+
 # License
 Any original code from me uses the MIT license: https://github.com/AlfredHus/Fantasy-Map_Sandbox/tree/main?tab=MIT-1-ov-file#readme
 

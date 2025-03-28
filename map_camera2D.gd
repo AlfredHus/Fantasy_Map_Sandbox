@@ -12,8 +12,19 @@ var isDragging : bool = false
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	zoomTarget = zoom
-	pass # Replace with function body.
-
+	#The camera's position is fixed at the top-left corner (0,0), but the map
+	# image is displayed relative to that position, so the image ends up with
+	# its corner starting in the middle of the screen. Set the cameras# position
+	# so it is in the center of screen so the map image origin is in the 
+	# tje upper left corner
+	
+	# Get the screen size
+	var screen_size = get_viewport().size
+	# Calculate the center position
+	var center_position = Vector2(screen_size.x / 2, screen_size.y / 2)
+	# Set the camera's position to the center
+	set_position(center_position)
+	
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
