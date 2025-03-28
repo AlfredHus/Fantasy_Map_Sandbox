@@ -9,7 +9,7 @@ A couple of screenshots to see examples of the outputs.
 ## Voronoi Diagram
 ![Screenshot of a voronoi diagram using poisson disk sampling for the points. Colors are random](images/voronoi_with_poisson.png)
 
-## Azgaar Style Map - Continues
+## Azgaar Style Map - Continents
 ![Screenshot of a n Azgaar style map using the Continents Template.](images/continents.png)
 
 # License
