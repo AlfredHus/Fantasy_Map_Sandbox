@@ -17,4 +17,4 @@ https://azgaar.wordpress.com - Really good information on how Azgaar built his F
 
 # Attribution (Third Party Software Used)
 For third party software used, either I used the project in its entirety, or I used parts of the code. In the code itself I document the exact file or snippet I used so you can take a look at the exact code rather than searching the original source code repository.
-Refer to the [Wiki](wiki/Attribution-(Third-Party-Software)) for the third party software used and lincese details.
+Refer to the [Wiki](https://github.com/AlfredHus/Fantasy_Map_Sandbox/wiki/Attribution-(Third-Party-Software)) for the third party software used and lincese details.
