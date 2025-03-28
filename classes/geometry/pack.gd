@@ -35,7 +35,8 @@ var cells: Dictionary = {
 	} 
 
 # vertices data object, contains only voronoi data
-var vertices: Dictionary[String, Array] = {
+#var vertices: Dictionary[String, Array] = {
+var vertices: Dictionary = {
 # vertex coordinates, [x,y]
 	"p": [], # integer[][]
 	

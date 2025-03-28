@@ -191,6 +191,67 @@ var heightmap_templates: Dictionary = (func():
 		Mask 3 0 0 0
 		Add -20 30-100 0 0
 		Range 6-8 40-50 5-95 10-90"""
+		
+	# Estuary template from : https://cartographyassets.com/assets/5119/estuary/
+	var estuary: String = """Add 40 all 0 0
+		Strait 20 horizontal 0 0
+		Pit 100 40-50 0-35 0-100
+		Multiply 0.6 35-40 0 0
+		Smooth 2 0 0 0
+		Strait 2-3 horizontal 0 0
+		Trough 15-20 5-10 30-70 0-100
+		Trough 10-15 3-7 25-45 0-20
+		Trough 10-15 3-7 25-45-85 80-100"""
+		
+	var earth_like: String = """Hill 4-6 20-40 15-85 30-45
+		Hill 3-7 20-40 15-85 55-70
+		Strait 2-7 vertical 0 0
+		Pit 1-2 40-50 35-55 20-80
+		Strait 2-7 vertical 0 0
+		Range 2-3 20-25 15-35 20-30
+		Range 2-3 20-25 15-35 65-80
+		Range 2-3 20-25 45-85 20-45
+		Range 2-3 20-25 45-85 65-80
+		Multiply .9 80-100 0 0
+		Strait 2-7 vertical 0 0
+		Pit 2-3 40-50 45-65 20-80
+		Trough 1-2 40-50 15-45 20-45
+		Trough 1-3 40-50 15-45 45-80
+		Trough 1-2 40-50 45-85 20-45
+		Trough 1-2 40-50 45-85 45-80
+		Multiply 1.2 17-20 0 0
+		Strait 2-7 horizontal 0 0
+		Multiply 1.2 17-50 0 0
+		Range 1-2 20-25 15-45 45-65
+		Range 1-2 20-25 65-85 45-80
+		Multiply 1.1 50-80 0 0
+		Hill 1-2 20 15-45 20-80
+		Hill 1-2 20 65-85 20-80
+		Multiply 1.2 15-30 0 0
+		Strait 2-7 vertical 0 0
+		Trough 1-2 40-50 35-65 65-80
+		Range 1-2 20-25 15-35 20-45
+		Strait 2-7 vertical 0 0
+		Range 1-2 20-25 65-85 45-80
+		Multiply .9 70-100 0 0
+		Hill 1-2 20-25 15-45 65-80
+		Hill 1-2 20-25 65-85 20-45
+		Hill 1 20-25 15-45 45-65
+		Hill 1 20-25 65-85 45-65
+		Strait 2-7 vertical 0 0
+		Trough 1-2 20-50 15-45 45-65
+		Trough 1-2 20-50 65-85 45-65
+		Strait 2-7 horizontal 0 0
+		Multiply 0.8 70-100 0 0
+		Hill 1-2 20-25 35-45 45-65
+		Hill 1-2 20-25 65-70 45-65
+		Pit 2-3 40-50 45-65 30-70
+		Trough 1-2 40-50 15-85 65-80
+		Trough 1-2 40-50 15-85 10-35
+		Strait 2-5 vertical 0 0
+		Multiply 1.1 45-90 0 0
+		Strait 3-7 vertical 0 0
+		Trough 1-2 40-50 45-65 45-65"""
 	#var fractious: String = """Hill 12-15 50-80 5-95 5-95
 		#Add 100 all 0 0
 		#Mask -.5 0 0 0"""
@@ -209,6 +270,8 @@ var heightmap_templates: Dictionary = (func():
 		"shattered": {"id": 10, "name": "Shattered", "template": shattered, "probability": 7},
 		"taklamakan": {"id": 11, "name": "Taklamakan", "template": taklamakan, "probability": 1},
 		"oldWorld": {"id": 12, "name": "Old World", "template": old_world, "probability": 8},
-		"fractious": {"id": 13, "name": "Fractious", "template": fractious, "probability": 3}
+		"fractious": {"id": 13, "name": "Fractious", "template": fractious, "probability": 3},
+		"estuary": {"id": 14, "name": "Estuary", "template": estuary, "probability": 3},
+		"earthLike": {"id": 15, "name": "Earth Like", "template": earth_like, "probability": 3}
 		}
 ).call() # Call the function

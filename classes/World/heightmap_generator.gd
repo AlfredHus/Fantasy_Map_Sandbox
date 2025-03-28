@@ -5,18 +5,21 @@ extends Node
 ##
 ## [url]https://github.com/Azgaar/Fantasy-Map-Generator/blob/master/modules/heightmap-generator.js[/url]
 ##
+## TODO: SOme of the maps don't quite match the Azgaar maps, for example,
+## contents do not always split apart.  Go through each of the maps and 
+## make them match the Azgaar maps.
 
-######################## Public Variables ######################################
+# Public Variables
 
-## heights contains the height(elevation) for each voronoi cell as calculated in
+## Heights contains the height(elevation) for each voronoi cell as calculated in
 ## the functions contained in the [b]HeightMapGenerator class[/b]
-#var heights: PackedInt32Array
+## Heights range from 0 - 100 and are integer values
 var heights: Array[int] = []
-## Used to store the starting point of a heightmap type so we can display it as a circle on the final map.
-## Used for debugging purposes.
+## Used to store the starting point of a heightmap type so we can display it as a
+## circle on the final map. Used for debugging purposes.
 var starting_point
 
-############################# Private Variables ##################################
+#Private Variables
 var _heightmap_templates: HeightMapTemplates
 var _blob_power: float
 var _line_power: float
@@ -24,13 +27,12 @@ var _grid: Grid
 var _voronoi: Voronoi
 
 ## Constructor
-func _init(grid: Grid, voronoi: Voronoi, heightmap_type: String):
+func _init(grid: Grid, voronoi: Voronoi, heightmap_type: String) -> void:
 	
 	_heightmap_templates = HeightMapTemplates.new()
 	_voronoi = voronoi
 	_grid = grid
 	# points are the grid points that were calculated by Grid.get_jittered_grid
-	#heights.resize(grid.points.size()) # DEBUG:AH
 	heights.resize(grid.points_n)
 	# Calculate blob and line powers
 	_blob_power = get_blob_power(grid.cells_desired)
@@ -40,24 +42,14 @@ func _init(grid: Grid, voronoi: Voronoi, heightmap_type: String):
 	grid.heights = heights
 	grid.cells["h"] = heights
 	
-	
-# Called when the node enters the scene tree for the first time.
-func _ready() -> void:
-	pass # Replace with function body.
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(_delta: float) -> void:
-	pass
-
-# Used to start the process of creating the map. 
-# Params: heightmap_type - the type of height map to create,
-#          ex., "volcano", "HighIsland", etc
-func generate(heightmap_type: String):
+## Used to start the process of creating the map. 
+## Params: heightmap_type - the type of height map to create,
+##          ex., "volcano", "HighIsland", etc
+func generate(heightmap_type: String) -> void:
 	from_template(heightmap_type)
 
-# Get the type of template from HeightMapTemplate which will define the parameters
-# for creating the map, for example, "volcano"
-#func from_template(id: String) -> PackedInt32Array:
+## Get the type of template from HeightMapTemplate which will define the parameters
+## for creating the map, for example, "volcano"
 func from_template(id: String) -> void:	
 	# Get the template for the map we are gonig to create
 	var template_string: String = _heightmap_templates.heightmap_templates[id]["template"]
@@ -68,6 +60,7 @@ func from_template(id: String) -> void:
 	# TODO: Add better error handling
 	if steps.is_empty():
 		print("Heightmap template: no steps. Template: %s. Steps: %s" % [id, steps])
+	
 	# A template has a set of steps that are used to construct the map, for example, "Smooth", 
 	# Hill", "Pit". Eeach of these elements consist of a set of paramters that define the step.
 	for step in steps:
@@ -85,9 +78,8 @@ func from_template(id: String) -> void:
 		# same approach.
 		add_step.callv(elements)
 
-
-# A modifier for the blobs that are layed down during the height map creation
-# The more cells, the larger the blob.		
+## A modifier for the blobs that are layed down during the height map creation
+## The more cells, the larger the blob.		
 func get_blob_power(cells: int) -> float:
 	# Create a map for blob power
 	var blob_power_map: Dictionary = {
@@ -108,7 +100,7 @@ func get_blob_power(cells: int) -> float:
 	# Return the value from the map or a default value of 0.98
 	return blob_power_map.get(cells, 0.98)
 
-# # A modifier for the lines that are layed down during the height map creation
+## A modifier for the lines that are layed down during the height map creation
 ## A line is used for troughs and ridges. The more cells, the larger the blob.	
 func get_line_power(cells: int) -> float:
 	# Create a map for line power
@@ -130,32 +122,33 @@ func get_line_power(cells: int) -> float:
 	# Return the value from the map or a default value of 0.81
 	return line_power_map.get(cells, 0.81)
 	
-	
-func add_step(tool , a2, a3, a4, a5):
+## Add a step from the heightmap template. Each heightmap template has multiple
+## steps. For each step, call the appropriate function to generate the step.
+func add_step(tool: String , a2: String, a3: String, a4: String, a5: String) -> void:
 	if (tool == "Hill"): return add_hill(a2, a3, a4, a5)
 	if (tool == "Pit"): return add_pit(a2, a3, a4, a5)
 	if (tool == "Range"): return add_range(a2, a3, a4, a5)
 	if (tool == "Trough"): return add_trough(a2, a3, a4, a5)
 	if (tool == "Strait"): return add_strait(a2, a3)
 	if (tool == "Mask"): return mask(a2.to_float())
-	if (tool == "Invert"): return invert(a2.to_int(), a3)
+	if (tool == "Invert"): return invert(a2.to_float(), a3)
 	if (tool == "Add"): return modify(a3, a2.to_float(), 1) 
 	if (tool == "Multiply"): return modify(a3, 0, a2.to_float()) 
 	if (tool == "Smooth"): return smooth(a2.to_float())
-	pass
+
   #
 ## Raises the surrounding land
 ## Params
 ## - Count: The numbert of hill blobs to generate
-func add_hill(count: String, height: String, range_x: String, range_y: String):
+func add_hill(count: String, height: String, range_x: String, range_y: String) -> void:
 	var counter = ProbabilityUtilities.get_number_in_range(count)
 	while counter > 0:
 		add_one_hill(height, range_x, range_y)
 		counter -= 1
 	
-# This function adds a hill to the map. A hill by definition is a large blob
-# that starts high and slowly descrease in height as you move farther away from
-# the starting point.
+## Adds a hill to the map. A hill by definition is a large blob
+## that starts high and slowly descrease in height as you move farther away from
+## the starting point.
 # The function randomly gets a starting point and for this and every other
 # point it processes, gets the neighbors of that point and assigns heights to
 # them. It records whenever a point has had a height assigned to it in the
@@ -170,14 +163,12 @@ func add_hill(count: String, height: String, range_x: String, range_y: String):
 # then it may haave only assigned 600 points height values with the remaining 
 # points having a height of "0".
 # The range_x and range_y are used to specify where the hill be on map. 
-func add_one_hill(height: String, range_x: String, range_y: String):
+func add_one_hill(height: String, range_x: String, range_y: String) -> void:
 	var change := PackedInt32Array()
 	var limit: int = 0
 	var start: int
 	var h: float
-	var counter: int = 0 # TESTING
-	var _temp_change
-	
+
 	# Get a random height value that is between the range "height", for example
 	# the height range passed in might be "90-100" as a string. This height
 	# will be used for the starting point of the hill.
@@ -186,26 +177,22 @@ func add_one_hill(height: String, range_x: String, range_y: String):
 	# The change array is used to store the assigned heights and to check 
 	# whether a height has been assigned to a point.
 	change.resize(heights.size())
-
 	
 	# This block of code finds the initial starting point.
 	while true:
-		var temp_width = _grid.width # # DEBUG
-		var temp_height = _grid.height # DEBUG
 		var x: float = get_point_in_range(range_x, _grid.width)
 		var y: float = get_point_in_range(range_y, _grid.height)
+		
 		# Get the initial start point that will be used to begin the height 
 		# map population
-
 		start = _grid.find_grid_cell(x, y)
 		
-		var start1 = _grid.find_grid_cell_index(x, y) # DEBUG
 		# Make sure that the height value is > 90
 		if heights[start] + h <= 90 or limit >= 50:
-			var temp_4 =  heights[start] + h # DEBUG
 			break
 		limit += 1
-		# Used for debugging the code. Shows where the start cell is.
+		
+	# Used for debugging the code. Shows where the start cell is.
 	var start_point = _grid.points[start] # DEBUG
 	starting_point = start_point #DEBUG
 
@@ -221,11 +208,6 @@ func add_one_hill(height: String, range_x: String, range_y: String):
 	# Process cells using a queue
 	while queue.size() > 0:
 		var q: int = queue.pop_front()
-		var temp_q = _grid.cells["c"].size() # DEBUG
-		if q > _grid.cells["c"].size(): # DEBUG
-			print ("q is greater than grid = ", q)
-		counter += 1 # DEBUG
-		#print ("Queue size: ", queue.size())
 		# cells["c"] contains the edges around a point for each point in the 
 		# voronoi diagram. These are the triangle points. For each point we 
 		# will have three or more entries. The are stored in the cells["c"]
@@ -235,38 +217,29 @@ func add_one_hill(height: String, range_x: String, range_y: String):
 		# the calculated height for that edge
 		# cells["c"] stores the neighbours of a point, i.e. the edges around the point
 		# for each unused neighbor
-		#print ("Parent Point: ", q, ":   cells[c][q]: ", _voronoi.cells["c"][q])
-		#for c in _voronoi.cells["c"][q]:
 		for c in _grid.cells["c"][q]:
-			var c_change = change[c] # DEBUG
 			if change[c] > 0:
 				continue		
-			# Calculated the height for the point and mark it as used
+			# Calculate the height for the point and mark it as used
 			# For each height, add some randomness to provide for more 
 			# irregularity.
-			_temp_change = pow(change[q], _blob_power) * (randf() * 0.2 + 0.9) # DEBUG
 			change[c] = pow(change[q], _blob_power) * (randf() * 0.2 + 0.9)
-			#print (_temp_change, " ", change[c])
 			if change[c] > 1:
 				# Add the point to the queue
 				queue.append(c)
 	# Put the heights into the heights array. Clamp the values so the height will be between 0 and 100
 	for i in heights.size():
 		heights[i] = clamp(heights[i] + change[i], 0, 100)
-		pass
-	pass
-		#print (" ", heights[i], " ", change[i])
-	#print("Add One Hill Heights: ", heights)
-	
+
 ## Lowers the surrounding land		
-func add_pit(count: String, height: String, range_x: String, range_y: String):
+func add_pit(count: String, height: String, range_x: String, range_y: String) -> void:
 	var counter = ProbabilityUtilities.get_number_in_range(count)
 	while counter > 0:
 		add_one_pit(height, range_x, range_y)
 		counter -= 1
-		
-		
-func add_one_pit(height: String, range_x: String, range_y: String):
+
+## Lower the surrounding land by one pit step.
+func add_one_pit(height: String, range_x: String, range_y: String) -> void:
 	var used := PackedInt32Array()
 	used.resize(heights.size())	
 	
@@ -292,7 +265,7 @@ func add_one_pit(height: String, range_x: String, range_y: String):
 			break
 		limit += 1
 		
-		var queue: Array[float]
+		var queue: Array[int]
 		queue = [start]
 		
 		while queue.size() > 0:
@@ -308,32 +281,30 @@ func add_one_pit(height: String, range_x: String, range_y: String):
 				queue.append(c)		
 
 # Creates a thin raised section
-func add_range(count, height, range_x, range_y):
-	count = ProbabilityUtilities.get_number_in_range(count)
-	while count > 0:
+func add_range(count: String, height: String, range_x: String, range_y: String) -> void:
+	var counter = ProbabilityUtilities.get_number_in_range(count)
+	while counter > 0:
 		add_one_range(height, range_x, range_y)
-		count -= 1
+		counter -= 1
 
-
-func add_one_range(height, range_x, range_y):
+# Creates a thin raised section by one step.
+func add_one_range(height: String, range_x: String, range_y: String) -> void:
 	var used := PackedInt32Array()
+	var start_cell: int
+	var end_cell: int 
+	var h: float = clamp(ProbabilityUtilities.get_number_in_range(height), 1, 100)
+	
 	used.resize(heights.size())
-	#for i in used.size():
-		#used[i] = 0
-	var start_cell 
-	var end_cell 
-	var h = clamp(ProbabilityUtilities.get_number_in_range(height), 1, 100)
 
 	if range_x and range_y:
 		# Find start and end points
-		var start_x = get_point_in_range(range_x, _grid.width)
-		var start_y = get_point_in_range(range_y, _grid.height)
+		var start_x: int = get_point_in_range(range_x, _grid.width)
+		var start_y: int = get_point_in_range(range_y, _grid.height)
 
-		var dist = 0
-		var limit = 0
-		var end_x
-		var end_y
-
+		var dist: int = 0
+		var limit: int = 0
+		var end_x: int
+		var end_y: int
 
 		while (dist < _grid.width / 8 or dist > _grid.width / 3) and limit < 50:
 			end_x = randf() * _grid.width * 0.8 + _grid.width * 0.1
@@ -343,124 +314,73 @@ func add_one_range(height, range_x, range_y):
 
 		start_cell = _grid.find_grid_cell(start_x, start_y)
 		end_cell = _grid.find_grid_cell(end_x, end_y)
-		var start_point = _grid.points[start_cell] # DEBUG
+		
+		# Used for debugging
+		var start_point:  = _grid.points[start_cell] # DEBUG
 		starting_point = start_point #DEBUG
 
-	var range = get_range(start_cell, end_cell, used, _grid.points, 0.85)
+	var range_values = get_range(start_cell, end_cell, used, _grid.points, 0.85)
 
 	# Add height to ridge and cells around
-	var queue = range.duplicate() # NOTE: maybe replace with slice?
+	var queue: Array[int] = range_values.slice(0) 
 	var i = 0
 	while queue.size() > 0:
-		var frontier = queue.duplicate()  # NOTE: maybe replace with slice?
+		var frontier: Array[int] = queue.slice(0) 
 		queue.clear()
 		i += 1
 		for cur in frontier:
-			var temp1 = clamp(heights[cur] + h * (randf() * 0.3 + 0.85), 1, 100)  # TEMP
 			heights[cur] = int(clamp(heights[cur] + h * (randf() * 0.3 + 0.85), 1, 100))
-			#heights[cur] = int(temp1)
-			#var temp3 = heights[cur]
-			#print ("heights[cur] = ", heights[cur])
-			#pass
-		#print ("In One Range 1: ", heights)
+
 		h = h ** _line_power - 1
 		if h < 2:
 			break
 		for f in frontier:
-			#for neighbor in grid.cells.c[f]:
-			#for neighbor in _voronoi.cells["c"][f]:
 			for neighbor in _grid.cells["c"][f]:
 				if used[neighbor] == 0:
 					queue.append(neighbor)
 					used[neighbor] = 1
 
 	# Generate prominences
-	for d in range.size():
+	for d in range_values.size():
 		if d % 6 != 0: # Only process every 6th element
 			continue
-		var cur = range[d]
+		var cur: int = range_values[d]
 		for l in range(i):
-			var neighbors = _grid.cells["c"][cur]
-			var min_index = scan(neighbors, Callable(self, "_compare_heights"))
+			var neighbors: Array = _grid.cells["c"][cur]
+			var min_index: int = scan(neighbors, Callable(self, "_compare_heights"))
 
-			var min = neighbors[min_index]
-			var temp = (heights[cur] * 2.0 + heights[min]) / 3.0 # TEMP
+			var min: int = neighbors[min_index]
 			heights[min] = (heights[cur] * 2.0 + heights[min]) / 3.0
 			cur = min
-	#print ("In One Range: ", heights)
-
-func _compare_heights(a, b):
-	return heights[a] - heights[b]	
-	
-# Scan an array lineraly and return the index of the minumum
-# element according to the specified comparator
-#
-# Parameters
-# * array: Contains a array of elements whose minimum value is to be
-#   calculated and the respective index returned
-# * comparator: specifies how the minimum element is to be obtained
-#
-func scan(array, comparator):
-	if array.is_empty():
-		return -1  # Return -1 if the array is empty
-
-	var min_index = 0
-	for i in range(1, array.size()):
-		if comparator.call(array[i], array[min_index]) < 0:
-			min_index = i
-
-	return min_index
-
-
-
-func get_range(cur, end, used, points, diff_random):
-	var range = [cur]
-	var p = points
-	used[cur] = 1
-
-	while cur != end:
-		var minimum = INF
-		
-		for e in _grid.cells["c"][cur]:
-			if used[e]:
-				continue
-			var diff = pow(p[end][0] - p[e][0], 2) + pow(p[end][1] - p[e][1], 2)
-			if randf() > diff_random:
-				diff /= 2
-			if diff < minimum:
-				minimum = diff
-				cur = e
-		if minimum == INF:
-			return range
-		range.append(cur)
-		used[cur] = 1
-
-	return range
 
 ## Creates a thin lowered section	
-func add_trough(count, height, range_x, range_y, start_cell = 0, end_cell = 0):
-	var counter = ProbabilityUtilities.get_number_in_range(count)
+func add_trough(count: String, height: String, range_x: String, range_y: String) -> void:
+	var counter: int = ProbabilityUtilities.get_number_in_range(count)
 	while counter > 0:
-		add_one_trough(height, range_x, range_y, start_cell, end_cell)
+		add_one_trough(height, range_x, range_y)
 		counter -= 1
 
-
-func add_one_trough(height, range_x, range_y, start_cell, end_cell):
+## Creates a single thin lowered section	
+func add_one_trough(height: String, range_x: String, range_y: String) -> void:
 	var used := PackedInt32Array()
-	used.resize(heights.size())
+	var start_cell: int
+	var end_cell: int
 	
-	#for i in range(used.size()):
-		#used[i] = false
-	var h = clamp(ProbabilityUtilities.get_number_in_range(height), 1, 100)
+	used.resize(heights.size())
 
+	var h: float = clamp(ProbabilityUtilities.get_number_in_range(height), 1, 100)
+	
+	# NOTE: range_x and range_y do not change in the function so the "if" 
+	# statement will always evaluate to "true". Looks like its only function
+	# is to ensure that both "range_x" and "range_y" have values
 	if range_x and range_y:
 		# Find start and end points
-		var limit = 0
-		var start_x
-		var start_y
-		var dist = 0
-		var end_x
-		var end_y
+		var limit: int = 0
+		var start_x: int
+		var start_y: int
+		var dist: int = 0
+		var end_x: int
+		var end_y: int
 
 		# Find the start cell
 		while limit < 50:
@@ -487,15 +407,14 @@ func add_one_trough(height, range_x, range_y, start_cell, end_cell):
 
 		end_cell = _grid.find_grid_cell(end_x, end_y)
 
-	var range = get_range(start_cell, end_cell, used, _grid.points, 0.80)
-
-	
+	# get main ridge
+	var trough_range: Array[int] = get_range(start_cell, end_cell, used, _grid.points, 0.80)
 
 	# Add height to ridge and surrounding cells
-	var queue = range.duplicate()
-	var i = 0
+	var queue: Array[int] = trough_range.slice(0)
+	var i: int = 0
 	while queue.size() > 0:
-		var frontier = queue.duplicate()
+		var frontier: Array[int] = queue.slice(0)
 		queue.clear()
 		i += 1
 		for f in frontier:
@@ -510,77 +429,68 @@ func add_one_trough(height, range_x, range_y, start_cell, end_cell):
 					used[neighbor] = true
 
 	# Generate prominences
-	for d in range.size():
-		var cur = range[d]
+	for d in trough_range.size():
+		var cur: int = trough_range[d]
 		if d % 6 != 0:
 			continue
 
 		for l in range(i):
-			var neighbors = _grid.cells["c"][cur]
-			var min_index = scan(neighbors, Callable(self, "_compare_heights"))
-			var min = neighbors[min_index]
+			var neighbors: Array = _grid.cells["c"][cur]
+			var min_index: int = scan(neighbors, Callable(self, "_compare_heights"))
+			var min: int = neighbors[min_index]
 			heights[min] = (heights[cur] * 2 + heights[min]) / 3
 			cur = min
-	#print ("Add One Trough Heights: ", heights)
 
 # Creates a vertical or horizontal lowered section
-func add_strait(width, direction := "vertical"):
-	width = min(ProbabilityUtilities.get_number_in_range(width), _grid.cells_x / 3)
-	#if width < 1 and randf() < width:
-	if width < 1 and ProbabilityUtilities.P(width):
+func add_strait(width: String, direction: String = "vertical") -> void:
+	
+	var width_of_strait: float = min(ProbabilityUtilities.get_number_in_range(width), _grid.cells_x / 3)
+
+	if width_of_strait < 1 and ProbabilityUtilities.P(width):
 		return
-	var used := PackedInt32Array()  
+
+	var used: Array[int]
 	used.resize(heights.size())
 	
 	var vert: bool = (direction == "vertical")
-	#var start_x = vert if vert else 5
 	var start_x: int = floor(randf() * _grid.width * 0.4 + _grid.width * 0.3) if vert else 5
-	#var start_y: int = floor(randf() * _grid.height * 0.4 + _grid.height * 0.3) if vert else 5
 	var start_y: int = 5 if vert else floor(randf() * _grid.height * 0.4 + _grid.height * 0.3)
 	var end_x: int = floor(_grid.width - start_x - _grid.width * 0.1 + randf() * _grid.width * 0.2) if vert else _grid.width - 5
 	var end_y: int = _grid.height - 5 if vert else floor(_grid.height - start_y - _grid.height * 0.1 + randf() * _grid.height * 0.2)
-
-#
 	var start: int = _grid.find_grid_cell(start_x, start_y)
 	var end: int = _grid.find_grid_cell(end_x, end_y)
-	#var start: int = 1146
-	#var end: int = 369
 	
-	var range = get_range(start, end, used, _grid.points, 0.80)
-	var query = []
-	#print ("Range Values: ", range)
+	# NOTE: "used" is an array and is passed by reference. get_range populates
+	# "used" and when the function returns, "used" is populated with values
+	# In the javascript code, "ger_range" is an inner function to add_strait,
+	# so it has access to the values that are modified in get_range.
+	var strait_range: Array[int] = get_range(start, end, used, _grid.points, 0.80)
+	var query: Array[int]
+
 	# Save the starting point so we can draw it on the map
 	# Sed for debugging
 	starting_point = _grid.points[start] #DEBUG
 
-	var step: float = 0.1 / width
+	var step: float = 0.1 / width_of_strait
 
-	while width > 0:
-		var exp = 0.9 - step * width
-		for r in range:
+	while width_of_strait > 0:
+		var exp: float = 0.9 - step * width_of_strait
+		for r in strait_range:
 			# Walk through the neighbors of the range valye "r"
 			# REmember that cells["c"] is a dictionary of arrays where
 			# each array contains the neighbors for the point
 			for e in _grid.cells["c"][r]:
-				var temp_r = _grid.cells["c"][r] # TEMP
 				if used[e]:
 					continue
 				used[e] = 1
 				query.append(e)
-				#heights[e] **= exp
 				heights[e] = int(heights[e] ** exp)
 				if heights[e] > 100:
 					heights[e] = 5
-				var temp = heights[e] # TEMP
-				pass
-	
-		range = query.duplicate()
-		var temp_range = query.duplicate() # TEMP
-			#query.clear()
-		width -= 1
-	#print ("In Add Strait: ", heights)
-	pass
-	
+
+		strait_range  = query.slice(0)
+		width_of_strait -= 1
+
 ## Modify is called when you are doing an Add or a Multiply step from the templates.
 ## Add ir Subtract from all heights
 ## Multiply all heights
@@ -611,16 +521,12 @@ func add_strait(width, direction := "vertical"):
 ##
 ## The Add step adds or subracts a value from all heights in range
 ## The multiply step multiplies all heights in range by a factor
-func modify(target_range: String, add: float, mult: float, power: float = 0.0) -> PackedInt32Array:
-
+func modify(target_range: String, add: float, mult: float, power: float = 0.0) -> void:
 	# target_range can either be a range, 30-100 or "land", or "all"
 	# power does not seem to be used, so it will default to 0.0
-	print ("In modify")
-
 	var minimum: float
 	var maximum: float
 	var is_land: bool
-
 
 	# if target_range is "land, set a minimum and maximum range of 20 - 100.
 	if target_range == "land":
@@ -643,7 +549,6 @@ func modify(target_range: String, add: float, mult: float, power: float = 0.0) -
 	# It is also possible this could be set to 20.0 if the range starts with a 20, for example, 20 - 30
 	is_land = (minimum == 20.0)
 
-
 	for i in heights.size():
 		var h: int = heights[i]
 		if h < minimum or h > maximum:
@@ -661,9 +566,7 @@ func modify(target_range: String, add: float, mult: float, power: float = 0.0) -
 		if power != 0:
 			h = pow(h - 20, power) + 20 if is_land else pow(h, power)
 
-
 		heights[i] = clamp(h, 0, 100)	
-	return heights
 
 
 ## Smooth all heights
@@ -676,8 +579,7 @@ func modify(target_range: String, add: float, mult: float, power: float = 0.0) -
 ## Smooth smooths the map by replacing cell heights by the average values of its neighbors.
 ## This means land next to a pit will lower, and land next to a hill will rise. Smooth removes any 
 ## spiky bits near land
-#
-func smooth(fr: float = 2.0, add: float = 0.0):
+func smooth(fr: float = 2.0, add: float = 0.0) -> void:
 	var new_heights: Array[int]= []
 	for i in range(heights.size()):
 		var neighbors: Array[int] = [heights[i]]  # Include the current height
@@ -687,75 +589,17 @@ func smooth(fr: float = 2.0, add: float = 0.0):
 		var mean: float = Statistics.mean(neighbors)
 		if fr == 1:
 			new_heights.append(int(mean + add))
-			pass
 		else:
 			var smoothed: int = clamp((heights[i] * (fr - 1) + mean + add) / fr, 1, 100)
 			new_heights.append(smoothed)
-			pass
 	
 	heights = new_heights
-	pass
-	#print ("Smooth heights: ", heights)
-
-
-func calculate_mean(values: Array) -> float:
-	if values.is_empty():
-		return 0.0
-	var total = 0.0
-	for value in values:
-		total += value
-	return total / values.size()
-
-
-
-
-# func smooth(fr: int = 2, add: float = 0) -> PackedInt32Array:
-# 	
-# 	print ("======> In Smooth")
-# 	var new_heights: PackedInt32Array
-# 
-# 	for i in heights.size():
-# 		var h = heights[i]
-# 		var a = [h]
-# 
-# 		for c in voronoi.cells["c"][i]:
-# 			a.append(heights[c])
-# 		var mean = a.sum() / a.size()
-# 
-# 		if fr == 1:
-# 			new_heights.append(mean + add)
-# 		else:
-# 			new_heights.append(clamp((h * (fr - 1) + mean + add) / fr, 0, 100))
-# 
-# 	heights = new_heights
-# 	print ("======> Leaving Smooth")
-# 	return heights
-
-
-# func smooth1(fr: float = 2, add: float = 0) -> void:
-	
-# 	var heights
-# 	heights= heights.map(func(h: float, i: int) -> float:
-# 		var a = [h]
-	
-# 		# Add neighboring heights to array `a`
-# 		for c in grid.cells.c[i]:
-# 			a.append(heights[c])
-	
-# 		# Calculate the result based on `fr`
-# 		if fr == 1:
-# 			return add  # Assuming `d3_mean` is a helper function
-# 		return clamp((h * (fr - 1)  + add) / fr, 1, 100)
-# )
-
 
 
 ## Mask heightmap (lower all cells along the map edge or in the map center
 ## The mask step looks like this: "Mask 3 0 0 0". Only the first value is used.
 ## Mask lowers cells near edges or in map center
-func mask(power: float = 1.0) -> PackedInt32Array:
-
-	print ("======> In Mask")
+func mask(power: float = 1.0) -> void:
 	var fr: float = abs(power) if power != 0.0 else 1.0
 	
 	for i in heights.size():
@@ -768,41 +612,55 @@ func mask(power: float = 1.0) -> PackedInt32Array:
 			distance = 1 - distance # inverted, 0 is center, 1 is edge
 		var masked: float = h * distance
 		heights[i] = clamp((h * (fr - 1) + masked) / fr, 1, 100)
-	print ("======> Leaving Mask")
-	return heights
-
 
 ## Invert the heightmap (mirror by x,y or both axes)
 ## The invert step looks like this: "Invert 0.4 both 0 0"
 ## Invert heightmap along the axes
-# NOTE: Right now, this function has an index error. Need to figure
-# out at some point what the problem is. FIXME
-func invert(count: int, axes: String) -> PackedInt32Array:
+func invert(count: float, axes: String) -> void:
 	if not ProbabilityUtilities.P(count):
-		return []
+		print ("No count value provided in the invert function")
+		return
 
 	var invert_x: bool = axes != "y"
 	var invert_y: bool = axes != "x"
 	var cells_x: int = _grid.cells_x
 	var cells_y: int = _grid.cells_y
+	var inverted: Array[int]
 
-	var inverted: PackedInt32Array
-	var h_size: int = heights.size() # DEBUG
 	for i in heights.size():
 		var x: int = i % cells_x
-		#var y = i / cells_x
 		var y = floor(i / cells_x)
 		var nx: int = cells_x - x - 1 if invert_x else x
 		var ny: int = cells_y - y - 1 if invert_y else y
 		var inverted_i: int = nx + (ny * cells_x)
 		inverted.append(heights[inverted_i])
 	heights = inverted
-	print ("Invert heights: ", heights)
-	return heights
-	
-	
 
+# Returns an range of integer values
+func get_range(cur: int, end: int, used: Array[int], points: PackedVector2Array, diff_random: float) -> Array[int]:
+	var range_values: Array[int] = [cur]
+	used[cur] = 1
 
+	while cur != end:
+		var minimum: float = INF
+		
+		for e in _grid.cells["c"][cur]:
+			if used[e]:
+				continue
+				
+			var diff: float = pow(points[end][0] - points[e][0], 2) + pow(points[end][1] - points[e][1], 2)
+			if randf() > diff_random:
+				diff /= 2
+			if diff < minimum:
+				minimum = diff
+				cur = e
+		if minimum == INF:
+			return range_values
+		range_values.append(cur)
+		used[cur] = 1
+
+	return range_values
+	
 ## This function returns a random point that is between a lower and upper
 ## range as defined by the String argument "target_range"
 func get_point_in_range(target_range: String, length: float) -> float:
@@ -813,10 +671,29 @@ func get_point_in_range(target_range: String, length: float) -> float:
 	var split_range: PackedStringArray = target_range.split("-")
 	var minimum: float = (float(split_range[0]) / 100.0) if split_range.size() > 0 else 0.0
 	var maximum: float = (float(split_range[1]) / 100.0) if split_range.size() > 1 else minimum
-	#minimum = .50
-	#maximum = .50
-	# Return a random value between the minimum and maximum
 
-	#return randf_range(minimum * length, maximum * length)
-	
+	# Return a random value between the minimum and maximum
 	return ProbabilityUtilities.rand(minimum * length, maximum * length)
+	
+# Scan an array lineraly and return the index of the minumum
+# element according to the specified comparator
+#
+# Parameters
+# * array: Contains a array of elements whose minimum value is to be
+#   calculated and the respective index returned
+# * comparator: specifies how the minimum element is to be obtained
+#
+func scan(array: Array, comparator: Callable) -> int:
+	if array.is_empty():
+		return -1  # Return -1 if the array is empty
+
+	var min_index: int = 0
+	for i in range(1, array.size()):
+		if comparator.call(array[i], array[min_index]) < 0:
+			min_index = i
+
+	return min_index
+	
+# Helper function to compare heights.
+func _compare_heights(a, b) -> int:
+	return heights[a] - heights[b]	

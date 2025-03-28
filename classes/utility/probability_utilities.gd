@@ -59,6 +59,7 @@ static func get_number_in_range(r: String) -> float:
 	return number_in_range	
 	
 
+## Probability shorthand
 static func P(probability) -> float:
 	if probability >= 1.0:
 		return true
@@ -66,6 +67,7 @@ static func P(probability) -> float:
 		return false
 	return randf() < probability
 
+## R6andom number in a range
 static func rand(min = null, max = null):
 	# If neither parameter is provided, return a float between 0 and 1.
 	if min == null and max == null:
