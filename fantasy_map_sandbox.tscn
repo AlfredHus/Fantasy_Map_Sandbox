@@ -6,10 +6,11 @@
 
 [node name="FantasyMapSandbox" type="Node2D"]
 script = ExtResource("1_l63tg")
-_poisson_distribution = true
-_draw_voronoi_cells = true
+_jittered_grid = true
+_cells_desired = 1000
 area = Rect2(0, 0, 1920, 1080)
 _selected_world = 3
+_draw_az_elevation_map = true
 
 [node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("2_w6rrm")

@@ -366,7 +366,7 @@ func _ready()  -> void:
 	if debug_mode: print ("Printing Voronoi Vertices")
 	if debug_mode: print ("Size: (", voronoi.voronoi_vertices.size(), ") ", voronoi.voronoi_vertices, "\n")
 	if debug_mode: print ("Printing Triangle Centers")
-	if debug_mode: print ("Size: (", voronoi.get_triangle_centers().size(), ") ", voronoi.get_triangle_centers(), "\n")
+	if debug_mode: print ("Size: (", voronoi.triangle_centers.size(), ") ", voronoi.triangle_centers, "\n")
 
 # Set up the following data structures.
 #Delaunay triangulation
@@ -1010,7 +1010,8 @@ func draw_packed_voronoi_cells(points, delaunay):
 ## Draw the Azgaar fantasy elevation map. This map displays a specific color
 ## for each range of elevation.
 func draw_az_elevation_map():
-	var voronoi_cell_dict: Dictionary = voronoi.get_voronoi_cells()	
+	#var voronoi_cell_dict: Dictionary = voronoi.get_voronoi_cells()	
+	
 	var color: Color
 	var elevation_value: int 
 	var font : Font
@@ -1022,8 +1023,8 @@ func draw_az_elevation_map():
 		#elevation_value = heightmap_generator.heights[key]
 		elevation_value = grid.heights[key]
 		color = color_scheme.azgaar_map_colors(elevation_value)
-		var temp = voronoi_cell_dict[key]
-		draw_polygon(voronoi_cell_dict[key], PackedColorArray([color]))	
+		var temp = voronoi.voronoi_cell_dict[key]
+		draw_polygon(voronoi.voronoi_cell_dict[key], PackedColorArray([color]))	
 		
 		# Use the polylabel position to display the boundary data on the map
 		# Used for debugging purposes. Displays whether the cell is a 
@@ -1044,7 +1045,6 @@ func draw_az_elevation_map():
 			draw_string(font, Vector2(b[0], b[1]), str(1), 0, -1, 8, Color.RED)
 
 func draw_az_feature_map():
-	var voronoi_cell_dict: Dictionary = voronoi.get_voronoi_cells()	
 	var color: Color
 	var feature: int 
 	var font : Font
@@ -1052,7 +1052,6 @@ func draw_az_feature_map():
 	
 	var grid_f_size = grid.cells["f"].size()
 
-	
 	for p in grid.points_n:
 		# Draw the voronoi cell with the feature color
 		feature = grid.cells["f"][p]
@@ -1073,12 +1072,12 @@ func draw_az_feature_map():
 			_:
 				color = Color.WHITE # No Value set.
 				
-		draw_polygon(voronoi_cell_dict[p], PackedColorArray([color]))		
+		draw_polygon(voronoi.voronoi_cell_dict[p], PackedColorArray([color]))		
 		
 		# DEBUG CODE 
 		var voronoi_vertice = []
 		voronoi_vertice.append([])
-		for vertice in voronoi_cell_dict[p]:
+		for vertice in voronoi.voronoi_cell_dict[p]:
 			voronoi_vertice[0].append(Vector2(vertice[0], vertice[1]))
 			# get the polylabel position
 		var polylabel = PolyLabel.new()
@@ -1088,48 +1087,19 @@ func draw_az_feature_map():
 
 ## Draw a temperature map for the Azgaar style temperature generation
 func draw_az_temperature_map():
-	var voronoi_cell_dict: Dictionary = voronoi.get_voronoi_cells()	
 	var color: Color
 	var feature: int 
 	var font : Font
 	font = ThemeDB.fallback_font
 	
 	for p in grid.points_n:
-		# Draw the temperature color. For now, its white for anything less than
-		# 0 degrees Centigrade and light green for anything above
 		var temperature = grid.cells["temp"][p]
-
-		# Color mapping based on the Universal Thermal Scale:
-		# https://en.wikipedia.org/wiki/Trewartha_climate_classification
-		if temperature >= 35.0: # Severly Hot - 5 °C  or higher 
-			color = Color.DARK_RED
-		elif temperature >= 28.0 && temperature < 35.0: # Very Hot - 28 to 34.9 °C
-			color = Color.RED
-		elif temperature >= 22.2 && temperature < 28.0: # Hot - 22.2 to 27.9 °C
-			color = Color.INDIAN_RED
-		elif temperature >= 18.0 && temperature < 22.2: # Warm - 18 to 22.1 °C 
-			color = Color.GREEN
-		elif temperature >= 10.0 && temperature < 18.0: # Mild = 10 to 17.9 °C
-			color = Color.GREEN_YELLOW
-		elif temperature >= 0.1 && temperature < 10.0: # Cool - 0.1 to 9.9 °C
-			color = Color.BISQUE
-		elif temperature >= -9.9 && temperature < 0.1: # Cold  - −9.9 to 0 °C
-			color = Color.ALICE_BLUE
-		elif temperature >= -24.9 && temperature < -10.0: # Very Cold - −24.9 to −10 °C
-			color = Color.LIGHT_BLUE
-		elif temperature >= -39.9 && temperature < -25.0: # Severely cold - −39.9 to −25 °C 
-			color = Color.BLUE
-		elif temperature >= -40.0: #  	Excessively cold - −40 °C or below
-			color = Color.DARK_BLUE
-		else:
-			color = Color.BLACK # Should not get here.
-				
-		draw_polygon(voronoi_cell_dict[p], PackedColorArray([color]))		
+		color = color_scheme.temperature_color_scheme(temperature)
+		draw_polygon(voronoi.voronoi_cell_dict[p], PackedColorArray([color]))		
 		
 ## Draws a precipitation map for Azgaar style maps. It uses a color scheme to 
 ## display the colors.
 func draw_az_precipitation_map():
-	var voronoi_cell_dict: Dictionary = voronoi.get_voronoi_cells()	
 	var color: Color
 	var feature: int 
 	var font : Font
@@ -1138,26 +1108,10 @@ func draw_az_precipitation_map():
 	for p in grid.points_n:
 
 		var precipitation = grid.cells["prec"][p]
-		
-		# Basic color scheme. Will replace with a better if a better is
-		# found
-		if precipitation == 0.0: # Dry 
-			color = Color.WHITE_SMOKE
-		elif precipitation <= 10.0: # Low precipitation
-			color = Color.YELLOW
-		elif precipitation <= 20.0: # Moderate precipitation
-			color = Color.ORANGE
-		elif precipitation <= 40.0: # Wet
-			color = Color.ORANGE_RED
-		else:
-			color = Color.DARK_RED # Very Wet
-
-		draw_polygon(voronoi_cell_dict[p], PackedColorArray([color]))		
+		color = color_scheme.precipitation_color_scheme(precipitation)
+		draw_polygon(voronoi.voronoi_cell_dict[p], PackedColorArray([color]))		
 	
-
-
 func draw_water_land_map():
-	var voronoi_cell_dict: Dictionary = voronoi.get_voronoi_cells()	
 	var color: Color
 
 	for p in grid.points_n:
@@ -1168,9 +1122,8 @@ func draw_water_land_map():
 		else:
 			color = Color.WHITE
 		
-		draw_polygon(voronoi_cell_dict[p], PackedColorArray([color]))				
-		
-		
+		draw_polygon(voronoi.voronoi_cell_dict[p], PackedColorArray([color]))				
+			
 # Convex hull
 #
 # There’s a problem with the edges_around_point function. Points on the convex hull 
@@ -1224,8 +1177,7 @@ func draw_voronoi_cells_convex_hull(points: PackedVector2Array, delaunay: Delaun
 			draw_polygon(voronoi_cell, PackedColorArray([Color.BLACK]))
 
 
-# Used to draw the points for a voronoi cell. It will display the location
-# of the point and its location in the centroid array.
+# Used to draw the points for a voronoi cell. 
 # Draws both the points and the exterior boundary.
 func draw_points():
 	for point in points:
@@ -1235,7 +1187,7 @@ func draw_points():
 		draw_circle(boundary, 2, Color.GREEN)
 	pass
 
-# Draw the packde points		
+# Draw the packed points		
 func draw_packed_points():
 	for point in pack.cells["p"]:
 		draw_circle(Vector2(point[0], point[1]), 2, Color.GREEN)	
@@ -1254,7 +1206,7 @@ func display_triangle_position_data(points: Variant):
 # of the centroid and its location in the centroid array	
 func draw_centroids():	
 	var i = 0
-	var number_of_centroids = voronoi.get_centroids()
+	var number_of_centroids = voronoi.centroids
 	for point in number_of_centroids:
 		draw_circle(point, 2, Color.WHITE)
 		draw_position_with_id(point, i)

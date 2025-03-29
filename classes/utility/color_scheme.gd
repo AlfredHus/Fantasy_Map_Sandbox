@@ -47,5 +47,44 @@ func elevation_color_cpt_city_columbia(elevation_value: int) -> Color:
 	if elevation_value <= 100: return Color (0.6078,0.4824,0.3843)
 	return Color.RED # we should not get here
 	
+#$ Color scheme used for temperature map
+func temperature_color_scheme(temperature: float) -> Color:
+	# Color mapping based on the Universal Thermal Scale:
+	# https://en.wikipedia.org/wiki/Trewartha_climate_classification
+	if temperature >= 35.0: # Severly Hot - 5 °C  or higher 
+		return Color.DARK_RED
+	elif temperature >= 28.0 && temperature < 35.0: # Very Hot - 28 to 34.9 °C
+		return Color.RED
+	elif temperature >= 22.2 && temperature < 28.0: # Hot - 22.2 to 27.9 °C
+		return Color.INDIAN_RED
+	elif temperature >= 18.0 && temperature < 22.2: # Warm - 18 to 22.1 °C 
+		return Color.GREEN
+	elif temperature >= 10.0 && temperature < 18.0: # Mild = 10 to 17.9 °C
+		return Color.GREEN_YELLOW
+	elif temperature >= 0.1 && temperature < 10.0: # Cool - 0.1 to 9.9 °C
+		return Color.BISQUE
+	elif temperature >= -9.9 && temperature < 0.1: # Cold  - −9.9 to 0 °C
+		return Color.ALICE_BLUE
+	elif temperature >= -24.9 && temperature < -10.0: # Very Cold - −24.9 to −10 °C
+		return Color.LIGHT_BLUE
+	elif temperature >= -39.9 && temperature < -25.0: # Severely cold - −39.9 to −25 °C 
+		return Color.BLUE
+	elif temperature >= -40.0: #  	Excessively cold - −40 °C or below
+		return Color.DARK_BLUE
+	else:
+		return Color.BLACK # Should not get here.
 
+## Basic precipitation color scheme.
+## TODO: Come up with a better color scheme.		
+func precipitation_color_scheme(precipitation: float) -> Color:
+	
+		if precipitation == 0.0: # Dry 
+			return Color.WHITE_SMOKE
+		elif precipitation <= 10.0: # Low precipitation
+			return Color.YELLOW
+		elif precipitation <= 20.0: # Moderate precipitation
+			return Color.ORANGE
+		elif precipitation <= 40.0: # Wet
+			return Color.ORANGE_RED
+		else: return Color.DARK_RED # Very Wet
 	

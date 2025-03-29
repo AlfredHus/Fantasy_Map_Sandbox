@@ -23,6 +23,11 @@ Static Typing
 Arrays
 var some_name: Array[int]
 
+Typed Dictionary Examples
+var grid_dictionary: Dictionary[int, Array]
+var all_grid_dictionary: Dictionary[int, int]
+
+
 
 Ternary expressions
 https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_basics.html#statements-and-control-flow

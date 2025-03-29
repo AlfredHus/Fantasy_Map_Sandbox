@@ -3,6 +3,10 @@ extends Node
 ## Used to support debugging the application. 
 ## Provides functions that can print out the various data structures to the
 ## console.
+# FIXME: The debug functions only work with random points, initial points and 
+# Poisson disk sampling. They break when using jittered. Jittered points
+# are stored in all_points and points, so we need to consider both. For the 
+# others, its just points.
 
 var _grid: Grid
 
