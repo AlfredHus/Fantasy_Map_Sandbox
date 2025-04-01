@@ -140,13 +140,23 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 		# neighboring vertices
 			grid.vertices["v"][t] = triangle_adjacent_to_triangle(delaunay, t)
 		# adjacent cells
-			var triangle_points: Array = points_of_triangle(points, delaunay, t)    
-			grid.vertices["c"][t] = triangle_points
+			#var triangle_points: Array = points_of_triangle(points, delaunay, t)    
+			#grid.vertices["c"][t] = triangle_points
+			grid.vertices["c"][t] = points_of_triangle_1(points, delaunay, t)     
 
 	setup_voronoi_cells(points, delaunay)
 	setup_triangle_centers(points, delaunay)
 	setup_triangle_edges(points, delaunay)
 	create_triangle_edges_dictionary(points, delaunay)
+	
+	
+func points_of_triangle_1(points: PackedVector2Array, delaunay: Delaunator, t: int) -> Array:
+	var points_of_triangle: Array
+	var temp_points : Vector2
+	var index : int
+	for e in edges_of_triangle(t):
+		points_of_triangle.append(delaunay.triangles[e])
+	return points_of_triangle
 
 # This function creates the fopllopwing data structures:
 # ===> voronoi_cell_dict

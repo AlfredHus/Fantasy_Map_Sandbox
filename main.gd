@@ -409,7 +409,6 @@ func _calculate_voronoi():
 	# grid.cells dictionary only contains the points - the  boundary points.
 	voronoi = Voronoi.new(all_points, grid, delaunay, area)
 
-
 # Calculate Delaunay and then Voronoi diagram for the packed grid. 
 # FIXME. Not being used at the moment since we have a problem with the 
 # packed dicitionaries having null values. Need to get the fixed first.
@@ -442,7 +441,7 @@ func _calculate_voronoi_packed(points: Array, boundary: Array) -> Dictionary:
 		cells["i"].append(i)
 	
 	var vertices = packed_grid.vertices
-
+	
 	return {"cells": packed_grid.cells, "vertices": packed_grid.vertices}
 
 # regraph uses the data from the grid class as a starting point.
@@ -460,8 +459,7 @@ func _reGraph():
 	var spacing2: float = grid.spacing ** 2
 
 	# The azgaar code uses a quadtree. Currently this is not implemented.
-	# TODO: IMplement quadtree. Placeholder code is commente out till this
-	# is done.
+	# TODO: Implement quadtree. Placeholder code in commente.
 	#var quadtree = QuadTree.new(Rect2(Vector2.ZERO, Vector2(10000, 10000))) # Define appropriate bounds
 	pack = Pack.new()
 	for i in grid.cells["i"]:
@@ -497,7 +495,7 @@ func _reGraph():
 					var x1 = GeneralUtilities.rn((x + grid.points[e].x) / 2, 1)
 					var y1 = GeneralUtilities.rn((y + grid.points[e].y) / 2, 1)					
 					
-					new_cells["p"].append([x, y])
+					new_cells["p"].append([x1, y1])
 					new_cells["g"].append(i)
 					new_cells["h"].append(height)
 	var packed_grid = _calculate_voronoi_packed(new_cells["p"], grid.exterior_boundary_points)
@@ -514,6 +512,9 @@ func _reGraph():
 	pack.vertices["p"] = packed_grid.vertices["p"]
 	pack.vertices["v"] = packed_grid.vertices["v"]
 	pack.vertices["c"] = packed_grid.vertices["c"]
+	#print ("1: ", pack.vertices["c"] )
+	#print ("2: ", packed_grid.vertices["c"])
+	pass
 
 	# Insert all points into quadtree
 	#for index in range(new_cells["p"].size()):
@@ -529,7 +530,7 @@ func _reGraph():
 # to fix this if we want to move forward.
 func _generate_azgaar_style_fantasy_map(world_selected: String):
 		heightmap_generator = HeightMapGenerator.new(grid, voronoi, world_selected)
-		features = Features.new(grid, pack)
+		features = Features.new(grid)
 		features.markup_grid(grid)
 		lakes = Lakes.new()
 		map = Map.new()
@@ -541,12 +542,12 @@ func _generate_azgaar_style_fantasy_map(world_selected: String):
 		map.calculate_map_coordinates(grid)
 		temperature.calculate_temperatures(grid, map)
 		precipitation.generate_precipitation(grid, map)
+		# NOTE: The pack values don't get populated till we get to regraph. 
+		# Up to this point, only the grid values are populated.
 		_reGraph()
-		#features.markup_grid_packed_new(pack)
-		#features.specify(grid)
-		#grid.print_min_max_values()
-		#var grid_f_size = grid.f.size()
-		#print ("Size of grid.f: ", grid.f.size())
+		features.markup_grid_packed(pack)
+		features.specify(grid)
+
 
 # Code taken from Godot documenation to start to undersdtand how the mouse
 # can be used to interact with the voronoi diagram and to help me understand
@@ -646,6 +647,7 @@ func _draw()  -> void:
 
 	if _draw_packed_voronoi_cells: draw_packed_voronoi_cells(pack.cells["p"], packed_delaunay)
 
+
 	if _draw_voronoi_edges: draw_voronoi_edges(points, delaunay)
 	elif _draw_packed_triangle_edges: draw_packed_triangle_edges(pack.cells["p"], packed_delaunay)
 	
@@ -677,8 +679,8 @@ func _draw()  -> void:
 func array_to_packed_vector2(arr: Array) -> PackedVector2Array:
 	var packed_array: PackedVector2Array = PackedVector2Array()
 	for vec in arr:
-		if vec is Array and vec.size() == 2:  # Check if it's a tuple (2-element array)
-			packed_array.push_back(Vector2(vec[0], vec[1]))  # Convert to Vector2
+#		if vec is Array and vec.size() == 2:  # Check if it's a tuple (2-element array)
+		packed_array.push_back(Vector2(vec[0], vec[1]))  # Convert to Vector2
 	return packed_array
 
 # Draw lines from the selected point to its neighbors. Used for debugging to 
@@ -794,12 +796,25 @@ func draw_packed_triangle_edges(points: PackedVector2Array, delaunay: Delaunator
 			# delaunay.triangles[e] gets the point id where the half-edge 
 			# starts. The point id is used to get the coordinates of the 
 			# point as stored in the points[] array
-			var p: Vector2 = points[delaunay.triangles[e]]
+			# FIXME: This is a temporaty workaround. Need to see why the 
+			# the Delaunay traingle has index to points outside of the 
+			# packed points.
+			if delaunay.triangles[e] >= packed_points.size(): # TEMP
+				draw_circle(grid.all_points[delaunay.triangles[e]], 4, Color.RED)
+				continue
+			var p: Vector2 = packed_points[delaunay.triangles[e]]
 			# delaunay.triangles[next_half_edge(e)] gets the opposite 
 			# half-edge point id in the adjacent triangle or -1 if there is no adjacent
 			# triangle. The point id is used to get the coordinates of the 
 			# point as stored in the points[] array
-			var q: Vector2 = points[delaunay.triangles[voronoi.next_half_edge(e)]]
+			
+			# FIXME: This is a temporaty workaround. Need to see why the 
+			# the Delaunay traingle has index to points outside of the 
+			# packed points.
+			if delaunay.triangles[voronoi.next_half_edge(e)] >= packed_points.size():# TEMP
+				draw_circle(grid.all_points[delaunay.triangles[voronoi.next_half_edge(e)]], 4, Color.GREEN)
+				continue
+			var q: Vector2 = packed_points[delaunay.triangles[voronoi.next_half_edge(e)]]
 
 			# Since a triangle edge point can be shared, this means each time
 			# it is shared, its index changes. When you display the index
@@ -970,7 +985,7 @@ func draw_packed_voronoi_cells(points, delaunay):
 			# Here is where we convert the indexes to the actual coordinates
 			# for the polygon that will form te voronoi cell
 			for t in triangles:
-				vertices.append(voronoi.triangle_circumcenter(points, delaunay, t))
+				vertices.append(voronoi.triangle_circumcenter(packed_points, delaunay, t))
 		# You need at least 3 vertices to form a voronoi cell, so if it less
 		# than three, you do not tray to draw the voronoi cell
 		if triangles.size() > 2:	
@@ -988,7 +1003,7 @@ func draw_packed_voronoi_cells(points, delaunay):
 			# how the voronoi cell is drawm
 			color = Color(randf(), randf(), randf(), 1)
 			for t in triangles:
-				var t_points = voronoi.points_of_triangle(points, delaunay, t)
+				var t_points = voronoi.points_of_triangle(packed_points, delaunay, t)
 				t_points.append(t_points[0])
 				draw_polyline(t_points, color)
 			# The way polylabel is currently written, it uses a GeoJSON like 
@@ -1111,16 +1126,17 @@ func draw_az_precipitation_map():
 		color = color_scheme.precipitation_color_scheme(precipitation)
 		draw_polygon(voronoi.voronoi_cell_dict[p], PackedColorArray([color]))		
 	
+## Draw a simple land water map that shows land and water voronoi cells
 func draw_water_land_map():
 	var color: Color
 
 	for p in grid.points_n:
-		if grid.isLand(p):
+		if grid.heights[p] >= 20: # land
 			color = Color.DARK_GREEN
-		elif grid.isWater(p):
+		elif grid.heights[p] < 20: # water
 			color = Color.BLUE
 		else:
-			color = Color.WHITE
+			color = Color.WHITE # should not get here
 		
 		draw_polygon(voronoi.voronoi_cell_dict[p], PackedColorArray([color]))				
 			
@@ -1190,7 +1206,7 @@ func draw_points():
 # Draw the packed points		
 func draw_packed_points():
 	for point in pack.cells["p"]:
-		draw_circle(Vector2(point[0], point[1]), 2, Color.GREEN)	
+		draw_circle(Vector2(point[0], point[1]), 3, Color.BLACK)	
 
 # Display the data for triangles. Used for debugging. 
 # TODO: Move to the debug class

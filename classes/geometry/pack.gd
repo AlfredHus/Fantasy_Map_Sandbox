@@ -86,3 +86,13 @@ var feature: Dictionary = {
 	#spacing = GeneralUtilities.rn(sqrt((width * height) / cells_desired),2)
 	#cells_x = floor((width + 0.5 * spacing - 1e-10) / spacing)
 	#cells_y = floor((height + 0.5 * spacing - 1e-10) / spacing)
+	
+	
+	
+## filter land cells
+func is_land(i):
+	return cells["h"][i] >= 20
+
+## filter water cells
+func is_water(i):
+	return cells["h"][i] < 20;

@@ -505,8 +505,12 @@ func isWater(i):
 	return heights[i] < 20;
 
 ## Return the distance between two points	
-func dist2(x1, y1, x2, y2):
-	return (x1 - x2) ** 2 + (y1 - y2) ** 2
+#func dist2(x1, y1, x2, y2):
+	#return (x1 - x2) ** 2 + (y1 - y2) ** 2
+
+## Return the distance between two points			
+func dist2(p1: Array, p2: Array) -> float:
+	return (p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2
 
 	
 
