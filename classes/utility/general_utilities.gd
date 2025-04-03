@@ -18,5 +18,11 @@ static func rn(v: float, d: float = 0):
 	var temp: float = round(v * m) / m	# TEMP
 	return round(v * m) / m	
 
-
-		
+## Convert a array of vectors to an array of arrays
+## USed for classes/functions that take an array of arrays as a parameter, 
+## for example, line_clip
+static func convert_vector2_array_to_nested(vector2_array):
+	var nested_array = []
+	for vec in vector2_array:
+		nested_array.append([vec.x, vec.y])
+	return nested_array	

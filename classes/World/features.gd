@@ -23,8 +23,8 @@ const INT8_MAX: int = 127
 var _time_now: int 
 var _time_elapsed: int
 
-var _grid
-var _pack
+var _grid: Grid
+var _pack: Pack
 # Make a copy of the heights array to use
 #var heights: Array[int] = grid.heights.duplicate()
 # FIXME. I need to change the packed arrays back to typed arrays.
@@ -246,7 +246,8 @@ func markup_grid_packed(pack: Pack) -> void:
 		counter += 1 # TEMP
 		var first_cell: int = queue[0]
 		_feature_ids[first_cell] = feature_id
-		land = true if _heights[first_cell] >= 20 else false
+		#land = true if _heights[first_cell] >= 20 else false
+		land = pack.is_land(first_cell)
 		# true if feature touches map border
 		var border: bool = true if _border_cells[first_cell] == 1 else false
 		#  count cells in a feature
@@ -275,7 +276,7 @@ func markup_grid_packed(pack: Pack) -> void:
 					_distance_field[cell_id] = LAND_COAST
 					_distance_field[neighbor_id] = WATER_COAST
 					if (_haven[cell_id] == 0):
-						_define_haven(cell_id, _neighbors, _haven, _harbor)
+						_define_haven(cell_id, _neighbors, _haven, _harbor, pack)
 				elif (land == true and is_neib_land == true):
 					if _distance_field[neighbor_id] == UNMARKED and _distance_field[cell_id] == LAND_COAST:
 						_distance_field[neighbor_id] = LANDLOCKED
@@ -355,7 +356,7 @@ func _add_feature(first_cell: int, land: bool, border: bool, feature_id: int, to
 		for vertex in feature["vertices"]:
 			var filtered = []
 			for cell_val in  pack.vertices["c"][vertex]:
-				if _grid.isLand(cell_val):
+				if pack.is_land(cell_val):
 					filtered.append(cell_val)
 			shoreline += filtered
 		feature["shoreline"] = _common_utils.unique(shoreline)
@@ -395,7 +396,7 @@ func _get_cells_data(feature_type: String, first_cell: int, feature_ids: Array, 
 	# Can't remember if I should be using the _get_feature_vertices function. 
 	# The both return different values. TODO: CHeck to see which one is correct
 	var feature_vertices = _path_utils.connect_vertices(feature_ids, type, pack.vertices, starting_vertex, false)
-	var feature_vertices1 = _get_feature_vertices(start_cell, feature_ids, type) 
+	#var feature_vertices1 = _get_feature_vertices(start_cell, feature_ids, type) 
 	return[start_cell, feature_vertices]
 	
 func _find_on_border_cell(first_cell: int, border_cells: Array, neighbors, feature_ids: Array, type_val: int, pack) -> int:
@@ -420,11 +421,11 @@ func _is_cell_on_border(cell_id: int, border_cells: Array, neighbors, feature_id
 	return false
 	
 ## Check to see if we have a haven and harbor
-func _define_haven(cell_id, _neighbors, _haven, _harbor):
-	var water_cells =_neighbors[cell_id].filter(func(i): return _pack.cells["h"][i])
+func _define_haven(cell_id, _neighbors, _haven, _harbor, pack: Pack):
+	var water_cells =_neighbors[cell_id].filter(func(i): return pack.cells["h"][i])
 	# Get the distances for each neigbor cell in a water cell
 	var distances = water_cells.map(func(neigbour_cell_id):
-		return _grid.dist2(_pack.cells["p"][cell_id], _pack.cells["p"][neigbour_cell_id]))
+		return _grid.dist2(pack.cells["p"][cell_id], pack.cells["p"][neigbour_cell_id]))
 	var closest = distances.find(distances.min())
 	# Set the haven to be the water cell with the smallest distance.
 	_haven[cell_id] = water_cells[closest]
@@ -452,9 +453,9 @@ func _get_feature_vertices(start_cell: int, feature_ids: Array, type_val: int) -
 
 	
 # Add properties to pack features
-func specify(grid):
+func specify(grid, pack):
 	
-	for feature in _pack["features"]:
+	for feature in pack["features"]:
 		if !feature || feature["type"] == "ocean":
 			continue
 		feature["group"] = _define_group(feature)

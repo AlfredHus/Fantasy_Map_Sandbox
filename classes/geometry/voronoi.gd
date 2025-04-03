@@ -439,8 +439,8 @@ func triangle_adjacent_to_triangle(delaunay: Delaunator, t: int) -> Array:
 	var adjacent_triangles: Array[int]
 	for e in edges_of_triangle(t):
 		var opposite: int = delaunay.halfedges[e]
-		if opposite >= 0:
-			adjacent_triangles.append(triangle_of_edge(opposite))
+		#if opposite >= 0:
+		adjacent_triangles.append(triangle_of_edge(opposite))
 	return adjacent_triangles;		
 	
 	

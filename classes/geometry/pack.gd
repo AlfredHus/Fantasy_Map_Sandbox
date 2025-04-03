@@ -40,7 +40,7 @@ var vertices: Dictionary = {
 # vertex coordinates, [x,y]
 	"p": [], # integer[][]
 	
-# neindexes of cells adjacent to each vertiex. Each vertex has 3 adjacent cells
+# indexes of cells adjacent to each vertiex. Each vertex has 3 adjacent cells
 	"v": [], # integer[][]
 # indexes of vertices adjacent to each vertex. Most vertexes have 3 neighboring
 # vertices, bordering vertices only have 2, while the third vertice is added 

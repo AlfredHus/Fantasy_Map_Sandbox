@@ -17,6 +17,9 @@ extends Node
 ## lineclip.polygon = polygonclip
 ## In the gdscript version, we keep the regular names and do not have an 
 ## alias name.
+## Important note: The parameter "points" is an array of arrays and not a
+## array of vector2's. If you have to pass in an array of Vectors, convert them
+## to an array of arrays.
 
 ## Cohen-Sutherland based polyline clipping.
 ## Handle polylines rather than just segments
@@ -86,9 +89,8 @@ func line_clip(points: Array, bbox: Array, result: Array= []) -> Array:
 ## Returns a clipped polygon
 func polygon_clip(points: Array, bbox: Array) -> Array:
 
-	# clip against each side of the clip rectangle
 	for edge in [1, 2, 4, 8]:
-		var result = []
+		var result: Array
 		var prev = points[points.size() - 1]
 
 		var prev_inside = !(_bit_code(prev, bbox) & edge)
@@ -124,6 +126,7 @@ func polygon_clip(points: Array, bbox: Array) -> Array:
 # the bounding box (bbox) bounded diagonally by (xmin, ymin) and *xmax, ymax)
 #func bit_code(p: Array, bbox: Array) -> int:
 func _bit_code(p, bbox: Array) -> int:
+
 
 	var code = 0
 	if p[0] < bbox[0]: 

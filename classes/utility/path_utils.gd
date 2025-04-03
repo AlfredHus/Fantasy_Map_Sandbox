@@ -19,7 +19,15 @@ func connect_vertices(feature_ids, feature_type, vertices, starting_vertex, clos
 		var current = next
 		chain.append(current)
 		
-		var neib_cells = vertices["c"][current]
+		# NOTE FIXME: vertices["c"] may have a -1 as an element. This does not seem
+		# to be the case with Azgaars code. Using a negative number as an 
+		# index in Godot counts from the back of the array, so -1 is the last 
+		# last element. IN javascript, while negative indexes are allowed,
+		# they don;t work the same way (i.e., access the last element for -1).
+		# This means the code will always grab the last element for
+		# neighbor_cells which is not a good thing since it will just
+		# repeat the same value everytime current = -1
+		var neighbour_cells = vertices["c"][current]
 		# If add_to_checked is provided, call it on every neighbor cell that passes of_same_type.
 		# IN the Azgaar code, this addtoChecked is used, but it is not defined in the code for this
 		# function. When I comment out the line, it does not see to have any affect. For now,
@@ -32,28 +40,38 @@ func connect_vertices(feature_ids, feature_type, vertices, starting_vertex, clos
 		# Map neighbor cells through of_same_type.
 		# (Assumes that neib_cells has exactly three entries.)
 		var mapped: Array = []
-		for cell in neib_cells:
+		for cell in neighbour_cells:
 			if cell >= feature_ids.size():
 				mapped.append(false)
 			else:
-			#mapped.append(of_same_type(feature_ids, cell, feature_type))
 				mapped.append(feature_ids[cell] == feature_type)
 		var c1 = mapped[0]
 		var c2 = mapped[1]
 		var c3 = mapped[2]
-		
+	
 		# Retrieve the three vertex connections for the current vertex.
 		var v_arr = vertices["v"][current]
-		
 		var v1 = v_arr[0]
 		var v2 = v_arr[1]
-		var v3
-		if v_arr.size() ==2:
-			v3 = -1
-		else:
-		#var v3 = v_arr[2]
-			v3 = v_arr[2]
+		var v3 = v_arr[2]
 		
+		# FIXME: On occasion v_arr will only have one value, occupying 
+		# v_arr[0]. There will be no value in v_arr[1]. In javascript this
+		# works since Javascript will evaluate the second assignment as 
+		# undefined
+		# Note: Just saw that when this code breaks, current = -1, which 
+		# is not good. FIXME
+		#var v1 = v_arr[0]
+		#var v2 = v_arr[1]
+		#var v3
+		#if v_arr.size() ==2:
+			#v3 = -1
+		#else:
+		##var v3 = v_arr[2]
+			#v3 = v_arr[2]
+
+
+
 		# Decide on the next vertex based on the conditions.
 		if v1 != previous and c1 != c2:
 			next = v1
