@@ -276,7 +276,7 @@ func add_one_pit(height: String, range_x: String, range_y: String) -> void:
 			for c in _grid.cells["c"][q]:
 				if used[c] == 1:
 					continue
-				heights[c] = clamp(heights[c] - h * (randf() * 0.2 + 0.9), 1, 100)
+				heights[c] = int(clamp(heights[c] - h * (randf() * 0.2 + 0.9), 1, 100))
 				used[c] = 1
 				queue.append(c)		
 
@@ -350,7 +350,7 @@ func add_one_range(height: String, range_x: String, range_y: String) -> void:
 			var min_index: int = scan(neighbors, Callable(self, "_compare_heights"))
 
 			var min: int = neighbors[min_index]
-			heights[min] = (heights[cur] * 2.0 + heights[min]) / 3.0
+			heights[min] = int((heights[cur] * 2.0 + heights[min]) / 3.0)
 			cur = min
 
 ## Creates a thin lowered section	
@@ -418,7 +418,7 @@ func add_one_trough(height: String, range_x: String, range_y: String) -> void:
 		queue.clear()
 		i += 1
 		for f in frontier:
-			heights[f] = clamp(heights[f] - h * (randf() * 0.3 + 0.85), 1, 100)
+			heights[f] = int(clamp(heights[f] - h * (randf() * 0.3 + 0.85), 1, 100))
 		h = pow(h, _line_power - 1)
 		if h < 2:
 			break
@@ -611,7 +611,7 @@ func mask(power: float = 1.0) -> void:
 		if power < 0.0:
 			distance = 1 - distance # inverted, 0 is center, 1 is edge
 		var masked: float = h * distance
-		heights[i] = clamp((h * (fr - 1) + masked) / fr, 1, 100)
+		heights[i] = int(clamp((h * (fr - 1) + masked) / fr, 1, 100))
 
 ## Invert the heightmap (mirror by x,y or both axes)
 ## The invert step looks like this: "Invert 0.4 both 0 0"

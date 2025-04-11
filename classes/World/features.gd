@@ -1,8 +1,6 @@
 class_name Features
 extends Node
 
-
-
 ###################################################################################################
 # Public Variables
 ###################################################################################################
@@ -24,89 +22,52 @@ var _time_now: int
 var _time_elapsed: int
 
 var _grid: Grid
-var _pack: Pack
 # Make a copy of the heights array to use
-#var heights: Array[int] = grid.heights.duplicate()
 # FIXME. I need to change the packed arrays back to typed arrays.
 # For now, this is a workaround. Array Array ( PackedInt32Array from )
 var _heights: Array[int] = []
 # The number of cells does not include the boundary points
 var _cells_number: int
-var _packed_cells_number: int
+#var _packed_cells_number: int
 var _distance_field: Array[int] = [] 
 var _features = []
 var _path_utils: PathUtils
 var _common_utils: CommonUtils
 var _polygon: Polygon
 
-# Called when the node enters the scene tree for the first time.
-func _ready() -> void:
-	print ("ENTERING FEATURES NODE")
-	pass # Replace with function body.
-
-	
-func _init(grid: Grid):
+func _init(grid: Grid) -> void:
 	_grid = grid
-		# Make a copy of the heights array to use
-	#var heights: Array[int] = grid.heights.duplicate()
 	# FIXME. I need to change the packed arrays back to typed arrays.
 	# For now, this is a workaround. Array Array ( PackedInt32Array from )
-	#var heights := Array(grid.heights)
 	# The number of cells does not include the boundary points
-	#_heights = grid.heights.duplicate()
 	_heights = grid.cells["h"].duplicate()
-	
-	#var cells_number: int = grid.points_n
-	#_cells_number = grid.i.size()
-	#_cells_number = grid.cells["i"].size()
 	_cells_number = grid.points_n
-	#_packed_cells_number = pack.points_n
-	# grid.cells.t
-	#var distance_field: Array[int] = [] 
-	# grid.cells.f
-	#var feature_ids: Array[int] = []
-	#_neighbors = grid.cells["c"]
-	##var neighbors = grid.cells["c"]
-	#
-	##var border_cells = grid.cells["b"]
-	#_border_cells = grid.cells["b"]
-	#var features: Array[int] = [0]
-	#var features = []
 	_distance_field.resize(_cells_number)
-	#_feature_ids.resize(_cells_number)
-	
-	
-	#_haven.resize(_cells_number)
-	#_harbor.resize(_cells_number)
-	
 	_path_utils = PathUtils.new()
 	_common_utils = CommonUtils.new()
 	_polygon = Polygon.new()
 	
-	
-
 ## Mark Grid features (ocean, lakes, islands) and calculate distance field
 func markup_grid(grid: Grid) -> void:
 	
-	var _neighbors
-	var _border_cells
+	var _neighbors: Array = []
+	var _border_cells: Array = []
 	_neighbors = grid.cells["c"]
 	_border_cells = grid.cells["b"]
 	# Measure the time it takes to perform this task
 	_time_now  = Time.get_ticks_msec()	
 
-	var queue: Array[int]
+	var queue: Array[int] = []
 	queue = [0]
 	var feature_id: int = 1
 	var land: bool
-	var counter: int = 0 # TEMP
-	# grid.cells.f
+	#var counter: int = 0 # TEMP
 	var _feature_ids: Array[int] = []
 	_feature_ids.resize(_cells_number)
 	_features = [0]
 	
 	while queue[0] != -1:
-		counter += 1 # TEMP
+		#counter += 1 # TEMP
 		var first_cell: int = queue[0]
 		_feature_ids[first_cell] = feature_id
 		land = true if _heights[first_cell] >= 20 else false
@@ -116,7 +77,6 @@ func markup_grid(grid: Grid) -> void:
 		while queue.size() > 0:
 			# NOTE: In Javascript, array.pop() removes the last element from 
 			# an array. The equivalent in gdscript is array.pop_back()
-			#var cell_id: int = queue.pop_back()
 			var cell_id: int = queue.pop_back()
 
 			if not border and _border_cells[cell_id]:
@@ -143,7 +103,6 @@ func markup_grid(grid: Grid) -> void:
 		else:
 			type = "lake"
 		
-
 		_features.append({
 			"i": feature_id,
 			"land": land,
@@ -154,91 +113,68 @@ func markup_grid(grid: Grid) -> void:
 		var unmarked_index: int = _feature_ids.find(UNMARKED)
 		queue.append(unmarked_index)
 
-		feature_id += 1 	# End while feature loop
-
-
+		feature_id += 1 
 	# Markup deep ocean cells.
 	markup(_distance_field, _neighbors,DEEP_WATER, -1, -10)
-	
-	print ("Counter = ", counter)
 
-# Distance field from water level. 
-# 1, 2, .... - land cells  
-# -1, -2, ... - water cells
-# 0 - unmarked cell
-	#grid.t = _distance_field
+	# Distance field from water level. 
+	# 1, 2, .... - land cells  
+	# -1, -2, ... - water cells
+	# 0 - unmarked cell
 	grid.cells["t"] = _distance_field
-# indexes of the features
-	#grid.f = _feature_ids
 	grid.cells["f"] = _feature_ids
 	grid.features = _features
-	#print ("Features: ", _features)
-	#print ("Features ID: ", grid.f)
-	#print ("Size of grid.t: ", grid.t.size())
-	#print ("Size of grid.f: ", grid.f.size())
-	#print ("Size of grid.features: ", grid.features.size())
-
 	_time_elapsed = Time.get_ticks_msec() - _time_now
 	print("markup_grid time: ", _time_elapsed)
-		
-func markup(distance_field, neighbors, start, increment, limit = INT8_MAX) -> void:
+	
+func markup(distance_field: Array, neighbors: Array, start: int, increment: int, limit: int = INT8_MAX) -> void:
 	var distance: int = start
-	var marked = INF
+	var marked: float = INF
 
 	while marked > 0 and distance != limit:
 		marked = 0
-		var prev_distance = distance - increment
+		var prev_distance: int = distance - increment
 	
 		for cell_id in range(neighbors.size()):
 			if distance_field[cell_id] != prev_distance:
 				continue
 
 			for neighbor_id in neighbors[cell_id]:
-				#print ("neighbor_id: ", neighbor_id, "Cell_id: ", cell_id)
 				if distance_field[neighbor_id] != UNMARKED:
 					continue
 				distance_field[neighbor_id] = distance
 				marked += 1
 		distance += increment
 		
-		
-		
-###############################################################################
-###### ADDED CODE #############################################################
 func markup_grid_packed(pack: Pack) -> void:
 	# When features was constructed, we only set up the _grid object. Now we 
 	# set up the pack object.
-	_pack = pack
-	var _haven = []
-	var _harbor = []
+	var haven: Array[int] = []
+	var harbor: Array[int] = []
 	
-	var _neighbors
-	var _border_cells
-	var _distance_field = []
-	var pack_cells_length
+	var _neighbors: Array = []
+	var _border_cells: Array = []
+	var _distance_field: Array[int] = []
+	var pack_cells_length: int
 	# Measure the time it takes to perform this task
 	_time_now  = Time.get_ticks_msec()	
 	pack_cells_length = pack.cells["i"].size()
 	if (pack_cells_length == 0):
 		return # no cells. Nothing to do 
 
-	_haven.resize(pack_cells_length)
-	_haven.fill(0)
-	_harbor.resize(pack_cells_length)
-	_harbor.fill(0)
-	
+	haven.resize(pack_cells_length)
+	harbor.resize(pack_cells_length)
 	_distance_field.resize(pack_cells_length)
+	
 	_neighbors = pack.cells["c"]
 	_border_cells = pack.cells["b"]
-	# FIXME. I need to change the packed arrays back to typed arrays.
-	# For now, this is a workaround. Array Array ( PackedInt32Array from )
 
-	var queue: Array[int]
+	var queue: Array[int] = []
 	queue = [0]
 	var feature_id: int = 1
 	var land: bool
 	var counter: int = 0 # TEMP
-	var features = []
+	var features: Array[Dictionary] = [] # Array of feature dictionary elements
 	var _feature_ids: Array[int] = []
 	
 	_feature_ids.resize(pack_cells_length)
@@ -246,7 +182,6 @@ func markup_grid_packed(pack: Pack) -> void:
 		counter += 1 # TEMP
 		var first_cell: int = queue[0]
 		_feature_ids[first_cell] = feature_id
-		#land = true if _heights[first_cell] >= 20 else false
 		land = pack.is_land(first_cell)
 		# true if feature touches map border
 		var border: bool = true if _border_cells[first_cell] == 1 else false
@@ -256,7 +191,6 @@ func markup_grid_packed(pack: Pack) -> void:
 		while queue.size() > 0:
 			# NOTE: In Javascript, array.pop() rempoves the last element from 
 			# an array. The equivalent in gdscript is array.pop_back()
-			#var cell_id: int = queue.pop_back()
 			var cell_id: int = queue.pop_back()
 
 			if _border_cells[cell_id]: 
@@ -264,7 +198,7 @@ func markup_grid_packed(pack: Pack) -> void:
 				
 			if not border and _border_cells[cell_id]:
 				border = true
-			var neib_id = _neighbors[cell_id]
+			var neib_id: Array = _neighbors[cell_id]
 			if neib_id == null:
 				continue
 			for neighbor_id in _neighbors[cell_id]:
@@ -275,8 +209,8 @@ func markup_grid_packed(pack: Pack) -> void:
 				if (land == true and is_neib_land == false):
 					_distance_field[cell_id] = LAND_COAST
 					_distance_field[neighbor_id] = WATER_COAST
-					if (_haven[cell_id] == 0):
-						_define_haven(cell_id, _neighbors, _haven, _harbor, pack)
+					if (haven[cell_id] == 0):
+						_define_haven(cell_id, _neighbors, haven, harbor, pack)
 				elif (land == true and is_neib_land == true):
 					if _distance_field[neighbor_id] == UNMARKED and _distance_field[cell_id] == LAND_COAST:
 						_distance_field[neighbor_id] = LANDLOCKED
@@ -293,17 +227,17 @@ func markup_grid_packed(pack: Pack) -> void:
 		if queue == []:
 			queue = [0]
 		queue[0] = _feature_ids.find(UNMARKED)
-		feature_id += 1 	# End while feature loop
+		feature_id += 1 
 	
-	markup(_distance_field, _neighbors,  DEEPER_LAND, 1) # markup pack land
-	markup(_distance_field, _neighbors, DEEP_WATER, -1, -10) # markup pack water
+	markup(_distance_field, _neighbors,  DEEPER_LAND, 1)
+	markup(_distance_field, _neighbors, DEEP_WATER, -1, -10)
 	
 	pack.cells["t"] = _distance_field
 	pack.cells["f"] = _feature_ids
 	pack.cells["features"] = features
 	pack.features = features
-	pack.cells["haven"] = _haven
-	pack.cells["harbor"] = _harbor
+	pack.cells["haven"] = haven
+	pack.cells["harbor"] = harbor
 	
 	print ("Size of grid.t: ", pack.cells["t"].size())
 	print ("Size of grid.f: ", pack.cells["f"].size())
@@ -380,10 +314,10 @@ func _get_cells_data(feature_type: String, first_cell: int, feature_ids: Array, 
 		get_type.call(cell_id, feature_ids) == type
 	var of_different_type = func (cell_id: int):
 		return get_type.call(cell_id, feature_ids) != type
-	var start_cell = _find_on_border_cell(first_cell, border_cells, neighbors, feature_ids, type, pack)
+	var start_cell: int = _find_on_border_cell(first_cell, border_cells, neighbors, feature_ids, type, pack)
 	
 
-	var starting_vertex = -1  # Default value in case no valid vertex is found
+	var starting_vertex: int = -1  # Default value in case no valid vertex is found
 
 	for v in pack.cells["v"][start_cell]: 
 		for item in pack.vertices["c"][v]:  
@@ -392,14 +326,12 @@ func _get_cells_data(feature_type: String, first_cell: int, feature_ids: Array, 
 				break  
 		if starting_vertex != -1:
 			break  
-	
-	# Can't remember if I should be using the _get_feature_vertices function. 
-	# The both return different values. TODO: CHeck to see which one is correct
-	var feature_vertices = _path_utils.connect_vertices(feature_ids, type, pack.vertices, starting_vertex, false)
-	#var feature_vertices1 = _get_feature_vertices(start_cell, feature_ids, type) 
+
+	var feature_vertices: Array = _path_utils.connect_vertices(feature_ids, type, pack.vertices, starting_vertex, false)
+
 	return[start_cell, feature_vertices]
 	
-func _find_on_border_cell(first_cell: int, border_cells: Array, neighbors, feature_ids: Array, type_val: int, pack) -> int:
+func _find_on_border_cell(first_cell: int, border_cells: Array, neighbors: Array, feature_ids: Array, type_val: int, pack) -> int:
 	if _is_cell_on_border(first_cell, border_cells, neighbors, feature_ids, type_val):
 		return first_cell
 		
@@ -410,7 +342,7 @@ func _find_on_border_cell(first_cell: int, border_cells: Array, neighbors, featu
 	return first_cell  # Fallback.
 		
 ## Check to see if a cell is a border cell
-func _is_cell_on_border(cell_id: int, border_cells: Array, neighbors, feature_ids: Array, type_val: int) -> bool:
+func _is_cell_on_border(cell_id: int, border_cells: Array, neighbors: Array, feature_ids: Array, type_val: int) -> bool:
 	# A cell is on the border if it is flagged in border_cells
 	if border_cells[cell_id]:
 		return true
@@ -420,19 +352,21 @@ func _is_cell_on_border(cell_id: int, border_cells: Array, neighbors, feature_id
 			return true
 	return false
 	
-## Check to see if we have a haven and harbor
-func _define_haven(cell_id, _neighbors, _haven, _harbor, pack: Pack):
-	var water_cells =_neighbors[cell_id].filter(func(i): return pack.cells["h"][i])
+## Check to see if we have a haven or harbor
+func _define_haven(cell_id: int, neighbors: Array, haven: Array, harbor: Array, pack: Pack) -> void:
+	var water_cells: Array = neighbors[cell_id].filter(func(i): return pack.cells["h"][i])
 	# Get the distances for each neigbor cell in a water cell
-	var distances = water_cells.map(func(neigbour_cell_id):
+	var distances: Array = water_cells.map(func(neigbour_cell_id):
 		return _grid.dist2(pack.cells["p"][cell_id], pack.cells["p"][neigbour_cell_id]))
-	var closest = distances.find(distances.min())
+	var closest: int = distances.find(distances.min())
 	# Set the haven to be the water cell with the smallest distance.
-	_haven[cell_id] = water_cells[closest]
+	haven[cell_id] = water_cells[closest]
 	# Store the number of water neighbors.
-	_harbor[cell_id] = water_cells.size()	
+	harbor[cell_id] = water_cells.size()	
 
-
+# NOTE: This code is not currently being used. This code would normally be used
+# by _get_cells_data. For now, there is embeded code in _get_cells_data. This
+# code is different. FIXME: Need to determine which one I will keep.
 func _get_feature_vertices(start_cell: int, feature_ids: Array, type_val: int) -> Array:
 	var type_value = feature_ids[start_cell]  # Get the type of the first cell
 	var starting_vertex = -1
@@ -453,12 +387,12 @@ func _get_feature_vertices(start_cell: int, feature_ids: Array, type_val: int) -
 
 	
 # Add properties to pack features
-func specify(grid, pack):
+func specify(grid: Grid, pack: Pack) -> void:
 	
 	for feature in pack["features"]:
 		if !feature || feature["type"] == "ocean":
 			continue
-		feature["group"] = _define_group(feature)
+		feature["group"] = _define_group(feature, pack)
 		
 		if feature["type"] == "lake":
 			# NOTE: Lakes has yet to be defined, so put in some fake data
@@ -467,18 +401,26 @@ func specify(grid, pack):
 			feature["height"] = 10
 			feature["name"] = "lake"
 
-func _define_group(feature):
+## Define the group that the feature belongs to. 
+func _define_group(feature: Dictionary, pack: Pack) -> String:
+	var f_type = feature["type"]
 	if (feature["type"] == "island"):
-		return _define_island_group(feature)
+		var type_i = _define_island_group(feature, pack)
+		return _define_island_group(feature, pack)
 	if (feature["type"] == "ocean"):
+		var type_o = _define_ocean_group(feature)
 		return _define_ocean_group(feature)
-	if (feature["type"] == "lake"):
-		return _define_lake_group(feature)
 		
+	return "freshwater" # WORKAROUND till  the lake code is put in
+	# Lakes not yet implemented
+	#if (feature["type"] == "lake"):
+		#return _define_lake_group(feature)
 	push_error("Markup: unknown feature type", feature.type)	
-	
-func _define_ocean_group(feature):
-	var grid_cells_number = _grid.i.size()
+
+## Returns the type of oscean. An ociean can be one of:
+## "ocean", "sea", or "gulf".
+func _define_ocean_group(feature: Dictionary) -> String:
+	var grid_cells_number = _grid.cells["i"].size()	
 	var OCEAN_MIN_SIZE = grid_cells_number / 25;
 	var SEA_MIN_SIZE = grid_cells_number / 1000;
 	if (feature["cells"] > OCEAN_MIN_SIZE):
@@ -487,16 +429,15 @@ func _define_ocean_group(feature):
 		return "sea"
 	
 	return "gulf"
-		
-func _define_island_group(feature):
-	var grid_cells_number = _grid.i.size()	
+
+## Returns the type of 	island. An island can be one of:
+## "lake_island", "continent", "island" "isle"
+func _define_island_group(feature: Dictionary, pack:Pack) -> String:
+	var grid_cells_number = _grid.cells["i"].size()	
 	var CONTINENT_MIN_SIZE = grid_cells_number / 10;
 	var ISLAND_MIN_SIZE = grid_cells_number / 1000;
+	var prevFeature = pack.features[pack.cells["f"][feature["firstCell"] - 1]];
 	
-	var temp3 = feature
-	var temp2 = feature["firstCell"]
-	var temp1 = _grid.f[feature["firstCell"] - 1]
-	var prevFeature = _grid.features[_grid.f[feature["firstCell"] - 1]];
 	if (prevFeature && prevFeature["type"] == "lake"):
 		return "lake_island"
 	if (feature["cells"] > CONTINENT_MIN_SIZE):
@@ -507,21 +448,23 @@ func _define_island_group(feature):
 	return "isle"
 		
 
-func _define_lake_group(feature):
-	if (feature.temp < -3):
-		return "frozen"
-	if (feature.height > 60 && feature.cells < 10 && feature.firstCell % 10 == 0):
-		return "lava"
-
-	if (!feature.inlets && !feature.outlet):
-		if (feature.evaporation > feature.flux * 4):
-			return "dry"
-		if (feature.cells < 3 && feature.firstCell % 10 == 0):
-			return "sinkhole"
-
-	if (!feature.outlet && feature.evaporation > feature.flux):
-		return "salt"
-
-	return "freshwater"
+# Lakes are not yet implemented, so this code cannot yet be used. Fix it
+# when lakes are implemented.
+#func _define_lake_group(feature: Dictionary) -> String:
+	#if (feature.cells["temp"] < -3):
+		#return "frozen"
+	#if (feature["height"] > 60 && feature.cells < 10 && feature.firstCell % 10 == 0):
+		#return "lava"
+#
+	#if (!feature.inlets && !feature.outlet):
+		#if (feature.evaporation > feature.flux * 4):
+			#return "dry"
+		#if (feature.cells < 3 && feature.firstCell % 10 == 0):
+			#return "sinkhole"
+#
+	#if (!feature.outlet && feature.evaporation > feature.flux):
+		#return "salt"
+#
+	#return "freshwater"
 	
 	

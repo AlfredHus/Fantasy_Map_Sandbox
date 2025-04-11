@@ -27,8 +27,6 @@ Typed Dictionary Examples
 var grid_dictionary: Dictionary[int, Array]
 var all_grid_dictionary: Dictionary[int, int]
 
-
-
 Ternary expressions
 https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_basics.html#statements-and-control-flow
 var x = (value) if (expression) else (value)
@@ -49,3 +47,10 @@ $ git remote remove origin
 git add . && git commit -m "your message here"
 
 git plugin documentation URL: https://github.com/godotengine/godot-git-plugin/wiki/Git-plugin-v3
+
+Log files found here: C:\Users\User Profile\AppData\Roaming\Godot\app_userdata\Polygon Island Generation
+
+Visual Studio Code Keyboard Controls
+
+Ctrl k c - Comment out a block of code.
+

@@ -55,7 +55,7 @@ var hull_coordinates := PackedVector2Array()
 #var vertices: Dictionary = {
 	#"p": [],  # vertex coordinates
 	#"v": [],  # neighboring vertices
-	#"c": []   # adjacent cells
+	#"c": []   # triangle tripets of indexes that form the triangle
 	#}
 
 # These two dictionaries contain the data for each unique edge, the start and 
@@ -125,9 +125,22 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 			
 			# cell vertices
 			# Azgaar Javascript Code: this.cells.v[p] = edges.map(e => this.triangleOfEdge(e)); 
+			# grid.cells["v"] contains the indexes of the triangle half edges. 
 			grid.cells["v"][p] =  edges.map(func(e): return triangle_of_edge(e)) # cell: adjacent vertex
+			# The following code generates the same data as grid.cells.v, but in a different order
+			var triangles = []
+			for edge in edges:
+				triangles.append(triangle_of_edge(edge))
+			print ("Trianlge of edge: ", triangles)	
 			# Azgaar Javascript Code:  this.cells.c[p] = edges.map(e => this.delaunay.triangles[e]).filter(c => c < this.pointsN)
 			# adjacent cells
+			# grid.cells["c"] contains the indexes of the voronoi cell sites (the id of the voronoi cell) that are adjacent,
+			# share a common face and are considered to be neighbors around the voronoi cell.
+			# For example, [[85, 99, 44, 82, 38, 5], [88, 32, 74, 75], [56, 25, 71, 45, 26, 61, 98]
+			# Each of the arrays in the dictionary "c" are the indexes of the voronoi cells that surround the 
+			# vorono cell in question, so usig the first element as an example, the voronoi cell in question 
+			# would be surrounded by voronoi cells 85, 99, 44, 82, 38 and 5. If you were to look at the voronoi
+			# diagram, you would see that each of the voronoi cells shares a cell face with the cell in question
 			grid.cells["c"][p] =  edges.map(func(e): return delaunay.triangles[e]).filter(func(c): return c < points_n)								
 			# Azgaar Javasccript Code:  this.cells.b[p] = edges.length > this.cells.c[p].length ? 1 : 0
 			# near border cells
@@ -136,13 +149,23 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 		var t: int = triangle_of_edge(e)
 		# vertex coordinates
 		if (!grid.vertices["p"][t]):  
-			grid.vertices["p"][t] = triangle_center(points, delaunay, t)                   
-		# neighboring vertices
+			# vertices["p"] contains the voronoi cell vertice coordinates for each voronoi 
+			# cell. It is not structured like voronoi_cells_dict.
+			grid.vertices["p"][t] = triangle_circumcenter(points, delaunay, t)                  
+			# vertices["v"] contains the indexes of the three triangles that
+			# are adjacent to the triangle
+			# Each element in the array contains the indexes of the three
+			# adjacent triangles. The ID of the triangle is the element
+			# position in the array.
+			# For example, ([12, 32, 14], [43, 65, 12], [4, 7, 9]
+			# Triangle ID 0 = [12, 32, 14]
+			# Triangle ID 1 = [43, 65, 12]
+			# Triangle ID 2 = [4, 7, 9]
 			grid.vertices["v"][t] = triangle_adjacent_to_triangle(delaunay, t)
-		# adjacent cells
-			#var triangle_points: Array = points_of_triangle(points, delaunay, t)    
-			#grid.vertices["c"][t] = triangle_points
-			grid.vertices["c"][t] = points_of_triangle_1(points, delaunay, t)     
+			# vertices["c"] contains the triangle triplets of indexes that contain the three indexes that 
+			# form a triangle. For example:
+			# ([16, 39, 14], [53, 85, 32], [41, 72, 94]...)
+			grid.vertices["c"][t] = index_of_triangle(delaunay, t)     
 
 	setup_voronoi_cells(points, delaunay)
 	setup_triangle_centers(points, delaunay)
@@ -150,10 +173,10 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 	create_triangle_edges_dictionary(points, delaunay)
 	
 	
-func points_of_triangle_1(points: PackedVector2Array, delaunay: Delaunator, t: int) -> Array:
+## Similar to the function "points_of_triangle", except it returns the indexes
+## instead of the point coordinates. An example of this would be [12, 76, 80]
+func index_of_triangle(delaunay: Delaunator, t: int) -> Array:
 	var points_of_triangle: Array
-	var temp_points : Vector2
-	var index : int
 	for e in edges_of_triangle(t):
 		points_of_triangle.append(delaunay.triangles[e])
 	return points_of_triangle
@@ -215,10 +238,10 @@ func setup_voronoi_cells(points: PackedVector2Array, delaunay) -> void:
 			# Calculate the centroid for the voronoi cell.
 			centroid = calculate_centroid(voronoi_cell)
 
-			if (p == 0):
-				pass
-			if voronoi_cell_dict.find_key(0):
-				print ("Voronoi Dict Key found")
+			# if (p == 0):
+			# 	pass
+			# if voronoi_cell_dict.find_key(0):
+			# 	print ("Voronoi Dict Key found")
 			voronoi_cell_dict[p] = voronoi_cell
 			cell_count += 1
 
@@ -374,6 +397,25 @@ func calculate_centroid(points: PackedVector2Array) -> Vector2:
 	centroid /= (6.0 * area)
 	centroids.append(centroid)
 	return centroid.abs()		
+	
+# Returns the radius of the circumcircle that any 3 2D points lie on.
+# Returns null if degenerate case.
+# a, b, and c: The points that lie on the circumcircle.
+# Reused from https://github.com/tniyer2/delaunay-voronoi/blob/master/scripts/voronoi.gd
+const FLOAT_EPSILON = 0.00001
+func calculate_circumcircle_radius(a: Vector2, b: Vector2, c: Vector2):
+	var angle = abs((b - a).angle_to(c - a))
+	
+	var numerator = (b - c).length()
+	var denominator = 2 * sin(angle)
+	if abs(numerator) <= FLOAT_EPSILON or abs(denominator) <= FLOAT_EPSILON:
+		return null
+		
+	var r = numerator / denominator
+	if abs(r) <= FLOAT_EPSILON:
+		return null
+		
+	return r
 	
 # Gets the indices of all the incoming and outgoing half-edges that touch a 
 # a given point.

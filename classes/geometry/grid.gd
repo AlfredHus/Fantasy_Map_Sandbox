@@ -102,15 +102,17 @@ var cells: Dictionary = {
 ## vertices["v"] contain the vertices for each triangle 
 ## in the delaunay triangulation. They are stored in the array as 
 ## triplets (3 indexes for each triangle and are stored using the triangle ID 
-## as their position in the array.
+## This is the same as if you were to iterate through delauany.tringles and
+## use voronoi.index_of_triangle() to form a triangle
 var vertices: Dictionary = {
 # vertex coordinates, [x,y]
 	"p": [], # integer[][]
 # neindexes of cells adjacent to each vertiex. Each vertex has 3 adjacent cells
 	"v": [],  # integer[][]
-# indexes of vertices adjacent to each vertex. Most vertexes have 3 neighboring
-# vertices, bordering vertices only have 2, while the third vertice is added 
-# with a value of -1
+# vertices["c"] stores the indexes that form the triangle as a triplet.
+# For example, each element in the array will be in the form of 
+# ([12, 18, 30], [40, 67, 80]...)
+# This is equivalent to iterating through 
 	"c": []  # integer[][]
 	}
 
@@ -245,6 +247,9 @@ func set_points_by_poisson_distribution(sampling_min_distance, sampling_poisson_
 	interior_boundary_points = generate_interior_boundary_points(_grid_area) 
 	for j in interior_boundary_points:
 		points.append(j)		
+	
+	# all_points is the same as points for poisson distribution
+	self.all_points = points
 		
 	return points
 
@@ -258,13 +263,16 @@ func set_points_by_poisson_distribution(sampling_min_distance, sampling_poisson_
 ## [br]
 ## Returns the generated points
 func set_random_points(size: Vector2i) -> PackedVector2Array:
-	var points := PackedVector2Array() 
+	var i_points := PackedVector2Array() 
 	print ("seed_points: ", cells_desired)
 	for i in range(cells_desired):
 		var new_point = Vector2(randi() % int(size.x), randi() % int(size.y))
 		new_point.x = int(new_point.x)
 		new_point.y = int(new_point.y)
 		points.append(new_point)	
+		
+	# Set the total number of points before adding the boundaries
+	points_n = points.size()
 
 	exterior_boundary_points = generate_exterior_boundary_points(_grid_area, spacing)
 	for i in exterior_boundary_points:
@@ -274,6 +282,10 @@ func set_random_points(size: Vector2i) -> PackedVector2Array:
 	for k in interior_boundary_points:
 		points.append(k)			
 	print ("Number of Random points: ", points.size())
+	
+	# For random points, these are equivalent
+	self.points = points
+	self.all_points = points
 	
 	return points
 
