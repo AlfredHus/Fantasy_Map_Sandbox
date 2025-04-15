@@ -49,7 +49,7 @@ extends Node2D
 
 ## the data overlay node which allows you to overlay data on the various
 ## diagrams
-## NOTE: Currently moving the data overlay functions from main.gd to this
+## TODO: Move the data overlay functions from main.gd to this
 ## node. Work in progress
 @onready var data_overlay = $DataOverlay
 
@@ -81,6 +81,8 @@ const MapRegionScene := preload("res://map_region.tscn")
 @export var _draw_filled_in_triangles: bool = false
 ## Set this if you want to see the triangle edges only
 @export var _draw_triangle_edges: bool = false
+## Set this to draw triangles using half-edges
+@export var _draw_halfedges: bool = false
 @export var _draw_packed_triangle_edges: bool = false
 ## Set this to draw arrows that show the direction of the triangle segments
 @export var _draw_triangle_edges_with_arrows: bool = false
@@ -128,6 +130,7 @@ const MapRegionScene := preload("res://map_region.tscn")
 @export var _debug_triangle_edges: bool = false
 @export var _debug_grid_features: bool = false
 @export var _debug_packed_features: bool = false
+@export var _debug_grid_cells_v: bool = false
 
 ## Use these to draw the various azgaar style maps
 @export_group("Map Modes")
@@ -166,12 +169,13 @@ enum TrianglePositionData {CORNERS = 1, MID_POINTS = 2, BOTH = 3}
 @export var _draw_border_data: bool = false
 ## Use this to display the boundary points
 @export var _draw_boundary_data: bool = false
-## Use this to display precipiation data on Azgaar style maps.
-@export var _display_az_precipitation_data: bool = false
-## Use this to display temeprature data on Azgaar style maps.
-@export var _display_az_temperature_data: bool = false
-## Use this to display elevation data on Azgaar style maps.
-@export var _display_az_elevation_data: bool = false
+# ## Use this to display precipiation data on Azgaar style maps.
+# @export var _display_az_precipitation_data: bool = false
+# ## Use this to display temeprature data on Azgaar style maps.
+# @export var _display_az_temperature_data: bool = false
+# ## Use this to display elevation data on Azgaar style maps.
+# @export var _display_az_elevation_data: bool = false
+
 
 @export_group("Relationships")
 ## Set to draw lines to the neighbors of a Voronoi Site when selecting the Voronoi Cell
@@ -357,6 +361,7 @@ func _ready()  -> void:
 	if _debug_triangle_edges: debug.print_triangle_edges_data(voronoi)
 	if _debug_grid_features: debug.print_grid_feature_data()
 	if _debug_packed_features: debug.print_packed_feature_data()
+	if (_debug_grid_cells_v): debug.verify_grid_cells_v(points, delaunay, voronoi)
 	
 	if debug_mode: print ("Triangle Edges: Size (", voronoi.halfedge_coordinates.size(), ") Coords: ",voronoi.halfedge_coordinates)
 	if debug_mode: print ("Triangle Edges Coordinates: Size(", voronoi.triangle_edges_coordinates.size(), ") Coords: ", voronoi.triangle_edges_coordinates)
@@ -657,6 +662,7 @@ func _draw()  -> void:
 	if _draw_grid_cells_v: draw_grid_cells_v(points, delaunay, voronoi)
 	if _draw_packed_voronoi_cells: draw_packed_voronoi_cells(pack.points, packed_delaunay)
 	if _draw_triangles: draw_triangles(points, delaunay)
+	if _draw_halfedges: _draw_triangles_using_halfedges(points, delaunay)
 	#draw_triangle_edges_for_vertices_v(points, delaunay, grid, voronoi)
 	if _draw_triangle_edges_with_arrows: draw_triangle_edges_with_arrows(points, delaunay)
 	if _draw_voronoi_cells_convex_hull: draw_voronoi_cells_convex_hull(points, delaunay)
@@ -666,6 +672,8 @@ func _draw()  -> void:
 	if _draw_triangle_centers: draw_triangle_centers()
 	if _draw_triangle_incenters: draw_triangle_incenters()
 
+	
+	#=== Draw the various Azgaar style maps ===#
 	# Draw the feature map for Azgaar style maps
 	if _draw_az_feature_map: draw_az_feature_map()
 	# Draw the temperature map for Azgaar style maps
@@ -676,6 +684,9 @@ func _draw()  -> void:
 	if _draw_az_elevation_map: draw_az_elevation_map()
 	# Draw the land/water map which only draws the land and water cells.
 	if _draw_az_water_land_map: draw_water_land_map()
+
+
+
 	
 	if _draw_triangle_edges: draw_triangle_edges(points, delaunay)
 
@@ -694,15 +705,12 @@ func _draw()  -> void:
 	if  _draw_triangle_packed_position_data: display_triangle_position_data(pack.cells["p"])
 	elif _draw_triangle_position_data: display_triangle_position_data(points)
 
- 	# Display Data points for Azgaar style maps
-	# if _display_az_precipitation_data: display_az_precipitation_data()
-	# if _display_az_temperature_data: display_az_temperature_data()
-	# if _display_az_elevation_data: display_az_elevation_data()
-
 	# Highlight selected site and its neighbors
 	if (draw_neighbor_lines): draw_neighbors()
 
 	if (selected_index != -1 and _draw_edges_around_point): draw_edges_around_point(selected_index)
+
+
 
 	# Automatically save the image of the map. Use for debugging purposes.
 	save_image()
@@ -991,7 +999,7 @@ func draw_edges_around_point1(e):
 # extreme point, then the poinb (Voronoi site) will be part of the convex hull.
 func draw_voronoi_edges(points: PackedVector2Array, delaunay: Delaunator) -> void:
 	#test_voronoi_cell_dictionary()
-	var seen: Array[Vector2]
+	# var seen: Array[Vector2]
 	
 	triangle_coordinates.resize(delaunay.triangles.size())
 	for e in delaunay.triangles.size():
@@ -1000,13 +1008,11 @@ func draw_voronoi_edges(points: PackedVector2Array, delaunay: Delaunator) -> voi
 			var from: Vector2 = voronoi.triangle_circumcenter(points, delaunay, voronoi.triangle_of_edge(e));
 			var to: Vector2 = voronoi.triangle_circumcenter(points, delaunay, voronoi.triangle_of_edge(delaunay.halfedges[e]));
 
-			#print ("Circumcenter from = ",  from, " : Circumcenter to = ", to)
-
 			draw_line(from,to,Color.BLACK, 2.0)
 
-			if not seen.has(from) and not seen.has(to) :
-				seen.append(from)
-				seen.append(to)
+			# if not seen.has(from) and not seen.has(to) :
+			# 	seen.append(from)
+			# 	seen.append(to)
 
 # To draw the Voronoi cells, we can turn a point’s incoming half-edges into 
 # triangles, and then find their circumcenters. We can iterate over half-edges, 
@@ -1048,7 +1054,9 @@ func draw_voronoi_cells(points, delaunay):
 			draw_polygon(voronoi_cell, PackedColorArray([color]))	
 
 ## Draw the voronoi cells using grid.cells["v"]. Similar to draw_voronoi_cells
-## which derives the cells to draw from scratch.
+## which derives the cells to draw from scratch. This is used to validate that
+## grid.cells["v"] has the expected values
+## * Note: This does not draw the border voronoi cells.
 func draw_grid_cells_v(points, delaunay, voronoi):
 	var seen = [] # used to keep track of which half-edges have been seen (i.e., iterated over)
 	# iterate over all of the triangles
@@ -1057,6 +1065,7 @@ func draw_grid_cells_v(points, delaunay, voronoi):
 	for triangles in grid.cells["v"]:
 		for t in triangles:
 			vertices.append(voronoi.triangle_circumcenter(points, delaunay, t))
+
 		# You need at least 3 vertices to form a voronoi cell, so if it less
 		# than three, you do not tray to draw the voronoi cell
 		if triangles.size() > 2:	
@@ -1066,24 +1075,26 @@ func draw_grid_cells_v(points, delaunay, voronoi):
 			## voronoi cell.
 			for vertice in vertices:
 				voronoi_cell.append(Vector2(vertice[0], vertice[1]))			
-			draw_polygon(voronoi_cell, PackedColorArray([color]))
-			print ("voronoi cells: ", voronoi_cell)	
-	
+			draw_polygon(voronoi_cell, PackedColorArray([color]))	
 			vertices.clear()
 	
-	for e in delaunay.triangles.size():
-		var p: int = delaunay.triangles[voronoi.next_half_edge(e)]
-		if p < grid.cells["v"].size():
-			print ("grid.cells[v]: p = ", p, " : " , grid.cells["v"][p])
-			var triangles = grid.cells["v"][p]
-			for t in triangles:
-				vertices.append(voronoi.triangle_circumcenter(points, delaunay, t))
-			print ("grid.cells[v] coordiniates = ", vertices)
-			var font : Font
-			font = ThemeDB.fallback_font	
-			for v in vertices:
-				draw_circle(v, 3, Color.YELLOW)
-		vertices.clear()
+
+	
+	
+	
+	# for e in delaunay.triangles.size():
+	# 	var p: int = delaunay.triangles[voronoi.next_half_edge(e)]
+	# 	if p < grid.cells["v"].size():
+	# 		print ("grid.cells[v]: p = ", p, " : " , grid.cells["v"][p])
+	# 		var triangles = grid.cells["v"][p]
+	# 		for t in triangles:
+	# 			vertices.append(voronoi.triangle_circumcenter(points, delaunay, t))
+	# 		print ("grid.cells[v] coordiniates = ", vertices)
+	# 		var font : Font
+	# 		font = ThemeDB.fallback_font	
+	# 		for v in vertices:
+	# 			draw_circle(v, 3, Color.YELLOW)
+	# 	vertices.clear()
 	
 		
 
@@ -1633,7 +1644,7 @@ func draw_position(point : Vector2, size_of_font: int = 10, font_color: Color = 
 # matches cells["v"] dictionary
 # this.cells.v[p] = edges.map(e => this.triangleOfEdge(e));
 # TODO: Move to thge debug class.
-func print_voronoi_cell_edges(points, delaunay):
+func print_voronoi_cell_edges():
 	var cells: Dictionary = {"v": []} 
 	cells["v"].resize(grid.points_n)
 	var seen = [] # used to keep track of which half-edges have been seen (i.e., iterated over)
@@ -1711,27 +1722,27 @@ func print_triangles_adjacent_to_triangles() -> void:
 # We then print the coordinates and the indexes as triplets which define the vertices for 
 # each triangle.
 #
-func print_triangles_data(points: PackedVector2Array, delaunay: Delaunator):
-	var points_of_triangle: PackedInt32Array
+# func print_triangles_data(points: PackedVector2Array, delaunay: Delaunator):
+# 	var points_of_triangle: PackedInt32Array
 
-	print ("Total number of triangle vertices: ", delaunay.triangles.size())
-	print ("Total number of triangles: ", delaunay.triangles.size() / 3)
-	print ("delaunay.triangles indexes: ", delaunay.triangles)
-	var tris: PackedVector2Array
+# 	print ("Total number of triangle vertices: ", delaunay.triangles.size())
+# 	print ("Total number of triangles: ", delaunay.triangles.size() / 3)
+# 	print ("delaunay.triangles indexes: ", delaunay.triangles)
+# 	var tris: PackedVector2Array
 	
-	for t in delaunay.triangles:
-		tris.append(points[t])
-	print ("Coordinates of delaunay.triangles: ", tris)
-	# Print out the coordinates of the triangle. Each triandle will be made up of three points
-	# They are grouped in bracketed groups of three.
-	for t in delaunay.triangles.size() / 3:
-		print ("Triangle ID: ", t)
-		print ("Coordinates: ", "(", voronoi.points_of_triangle(points, delaunay, t), ")")
-		# Print out the indexes of the points that form the triangle.
-		for e in voronoi.edges_of_triangle(t):
-			points_of_triangle.append(delaunay.triangles[e])
-		print ("Indexes: ", "(", points_of_triangle, ")")
-		points_of_triangle.clear()
+# 	for t in delaunay.triangles:
+# 		tris.append(points[t])
+# 	print ("Coordinates of delaunay.triangles: ", tris)
+# 	# Print out the coordinates of the triangle. Each triandle will be made up of three points
+# 	# They are grouped in bracketed groups of three.
+# 	for t in delaunay.triangles.size() / 3:
+# 		print ("Triangle ID: ", t)
+# 		print ("Coordinates: ", "(", voronoi.points_of_triangle(points, delaunay, t), ")")
+# 		# Print out the indexes of the points that form the triangle.
+# 		for e in voronoi.edges_of_triangle(t):
+# 			points_of_triangle.append(delaunay.triangles[e])
+# 		print ("Indexes: ", "(", points_of_triangle, ")")
+# 		points_of_triangle.clear()
 
 # matches vertices["c"] dictionary
 # this.vertices.c[t] = this.pointsOfTriangle(t);
@@ -1864,3 +1875,66 @@ func select_azgaar_style_world(selected_world: int) -> String:
 # 		draw_string(font, Vector2(result[0], result[1]), str(snapped(elevation, 0.1)), 0, -1, 8, Color.BLACK)			
 	
 #endregion
+
+
+## The delaunay.halfedges is a PackedInt32Array[j0, j1, j2,...]. For each index (i),
+## 0 <= i <= delaunay.halfedges.size(), there is a halfedge from delaunay.triangle 
+## vertex j = delaunay.halfedges[i] to delaunay.triangle vertex i.	
+## This means that delaunay,triangle "i/3" is adjacent to triangle "j/3".
+## If j is negative, then triangle "i/3" is an exterior triangle on the convex hull.
+## draw_half_edges renders the internal edges of the Delaunay triangulation
+## This function is used to help understand how delaunay.halfedges work.
+func _draw_triangles_using_halfedges(points, delaunay):
+
+	var font : Font
+	font = ThemeDB.fallback_font
+	# used to keep track of which half-edges have been seen (i.e., iterated over)
+	var seen = [] 
+	
+	var triangle_i
+	var triangle_j
+	# For each index (i)
+	for i in range(delaunay.halfedges.size()):
+		# Vertex j = delaunay.halfedges[i]
+		var j = delaunay.halfedges[i]
+
+		# Get the triangle vertices. We need those in order to get the triangle points. We
+		# can't use the halfedges directly. 
+		# From delaunay.triangle vertex j to delaunay.triangle vertex i, there is a halfedge
+		triangle_i = delaunay.triangles[i]
+		triangle_j = delaunay.triangles[j]
+
+		print ("from ti: ", triangle_i, " to tj: ", triangle_j, " for Triangle : ", i/3)	
+		print ("from i: ", i, " to j: ", j, " for Triangle : ", i/3)
+
+		if i < 124:
+			print ("halfedges [", delaunay.halfedges[i], ",", delaunay.halfedges[i+1], ",", delaunay.halfedges[i+2], "]")	 
+		# Skip 
+		if (j < i):
+			continue
+
+		# draw the line between the two triangle vertices
+		draw_line(points[triangle_i], points[triangle_j], Color.RED, 1.0)	
+		# print the index of the delaunay.halfedges onto the midpoint of the edge line
+		var mid_point = lerp( points[triangle_i], points[triangle_j], .5) 
+		draw_string(font, mid_point, str("i: ", i), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color.WHITE)
+	
+		# offset the overlay data so it is bit to the right of the triangle point for 
+		# better readability
+		var position_i = points[triangle_i]
+		position_i.x = position_i.x + 5
+		
+		# Only display the overlay data if we have not already displayed it. If we don;t do this,
+		# the display of the data blurs making it unreadabile.
+		if not seen.has(triangle_i):
+			#draw_string(font, position_i, str("ti: ", triangle_i, "    t: ", i), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color.BLACK)
+			draw_string(font, position_i, str("ti: ", triangle_i, " (i: ", i, ", j: ", j, ")"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color.BLACK)
+			# Draw a cicrle at triangle 0 as a reference point
+			if triangle_i == 0:
+				draw_circle(position_i, 4, Color.GREEN)
+			seen.append(triangle_i) 
+
+		
+			
+
+	

@@ -60,6 +60,7 @@ func print_points_data():
 # We then print the coordinates and the indexes as triplets which define the vertices for 
 # each triangle.
 #
+# Controlled by #export variable: "_debug_triangles"
 func print_triangles_data(points: PackedVector2Array, delaunay: Delaunator, voronoi: Voronoi):
 	var points_of_triangle: PackedInt32Array
 	
@@ -75,9 +76,10 @@ func print_triangles_data(points: PackedVector2Array, delaunay: Delaunator, voro
 	# Note: No index in delaunay.triangle should be larger than the 
 	# the total number of points.
 	print(" The size of the delaunay.triangles should be 3 times the size of vertices[c] amd number of triangles")
-	print ("Total number of triangle vertices: ", delaunay.triangles.size())
-	print ("Total number of vertices[c]: ", _grid.vertices["c"].size())
-	print ("Total number of triangles: ", delaunay.triangles.size() / 3)
+	print ("Total number of triangle vertices (delaunay.triangles.size): ", delaunay.triangles.size())
+	print ("Total number of grid.vertices[c].size: ", _grid.vertices["c"].size())
+	print ("Total number of triangles (delaunay.triangles.size() / 3): ", delaunay.triangles.size() / 3)
+	print ("Total number of half-edges (delaunay._halfedges.size): ", delaunay._halfedges.size())
 	print()
 	# Create an array that contains all of the unique indexes of the triangles
 	# This array should contain the same number of elements as the points
@@ -134,7 +136,7 @@ func print_triangles_data(points: PackedVector2Array, delaunay: Delaunator, voro
 	# use voronoi.index_of_triangle() to form a triangle
 	print ("grid.vertices[c]. Stores the triplets of indexes for the delaunay.triangles: ", _grid.vertices["c"])
 	print()
-	print("Delaunay triangles. Equivalent to grid.vertices[c]")
+	print("Delaunay triangles (delaunay.triangles). Equivalent to grid.vertices[c]")
 	var triangles: Array
 	for t in delaunay.triangles.size() / 3:
 		triangles.append(voronoi.index_of_triangle(delaunay, t))
@@ -198,7 +200,8 @@ func print_triangles_data(points: PackedVector2Array, delaunay: Delaunator, voro
 	#print()
 	#print ("Coordinates on the convex hull: ", voronoi.hull_coordinates)
 	#print()
-	#print ("_halfedges: ", delaunay._halfedges)	
+	print ("_halfedges: ", delaunay._halfedges)	
+	print ("grid.cells[v]: ", _grid.cells["v"]) 
 	
 	print ("grid.vertices[v]: Size =  ",_grid.vertices["v"].size(), " : ",  _grid.vertices["v"])
 	print()
@@ -238,11 +241,56 @@ func print_voronoi_cell_data(points: PackedVector2Array, delaunay: Delaunator, v
 		print ("Cell Idexes: ", voronoi.voronoi_cell_dict_indexes[key])
 		print ("Voronoi Cell Vertices: ", voronoi.vertices_of_voronoi_cell(key))
 
+	print ("Voronoi Cell Vertices: ", voronoi.voronoi_vertices)
+
 	
 	# var temp1 = voronoi.voronoi_cell_dict # REMOVE WHEN DONE
 	# temp1.sort()
 	# for key in temp1:
 	# 	print ("Cell ID TEMP1: (", key, ") ", "Cell Site: ", " Cell Vertices: ", temp1[key])
+
+
+
+
+## Verifies that grid.cells["c"] has the correct content.
+## grid.cells["v"] should be equal to the cells["v"]
+# matches cells["v"] dictionary
+# this.cells.v[p] = edges.map(e => this.triangleOfEdge(e));
+func verify_grid_cells_v(points, delaunay, voronoi):
+	var cells: Dictionary = {"v": []} 
+	cells["v"].resize(_grid.points_n)
+	var seen = [] # used to keep track of which half-edges have been seen (i.e., iterated over)
+
+	# iterate over all of the triangles and build the cells[v] to compare against
+	for e in delaunay.triangles.size():
+		var triangles = []
+		var vertices = []
+		var p = delaunay.triangles[voronoi.next_half_edge(e)]
+		# if we have not yet seen this half-edge, iterate over it and set that
+		# it has been seen
+		if not seen.has(p) && p < _grid.points_n:
+			seen.append(p)
+			var edges = voronoi.edges_around_point(delaunay, e)
+			for edge in edges:
+				triangles.append(voronoi.triangle_of_edge(edge))
+			for t in triangles:
+				vertices.append(voronoi.triangle_circumcenter(points, delaunay, t))
+
+			cells["v"][p] = triangles	
+		if triangles.size() > 2:
+			var voronoi_cell = PackedVector2Array()
+			for vertice in vertices:
+				voronoi_cell.append(Vector2(vertice[0], vertice[1]))	
+	
+	# cells[["v"] should be equal to grid.cells["v"]
+	if cells["v"] == _grid.cells["v"]:
+		print ("grid.cells[v] and cells[v] are equal")
+	else:	
+		print ("ERROR: grid.cells[v] and cells[v] are not equal")
+
+	print ("VERIFYING grid.cells[v]")
+	print ("local cells_v: ", cells["v"])
+	print ("grid.cells[v]: ", _grid.cells["v"])
 
 func print_triangle_edges_data(voronoi: Voronoi):
 	print ("Total number of edges: ", voronoi.triangle_edge_coordinates.size())

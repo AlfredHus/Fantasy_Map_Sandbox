@@ -87,6 +87,12 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 
 	var cell_points: PackedVector2Array
 
+	print ("half-edges: ", delaunay.halfedges)
+	print("triangles: ", delaunay.triangles)
+
+
+
+
 	# The next code block iterates through all of the triangle indexes as 
 	# defined in delaunay.triangle to build the dictionarys, using the
 	# the triangle index as a index into the dictionary array. 
@@ -131,7 +137,6 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 			var triangles = []
 			for edge in edges:
 				triangles.append(triangle_of_edge(edge))
-			print ("Trianlge of edge: ", triangles)	
 			# Azgaar Javascript Code:  this.cells.c[p] = edges.map(e => this.delaunay.triangles[e]).filter(c => c < this.pointsN)
 			# adjacent cells
 			# grid.cells["c"] contains the indexes of the voronoi cell sites (the id of the voronoi cell) that are adjacent,
@@ -167,6 +172,7 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 			# ([16, 39, 14], [53, 85, 32], [41, 72, 94]...)
 			grid.vertices["c"][t] = index_of_triangle(delaunay, t)     
 
+	print ("grid.vertices[c]: ", grid.vertices["c"])
 	setup_voronoi_cells(points, delaunay)
 	setup_triangle_centers(points, delaunay)
 	setup_triangle_edges(points, delaunay)
@@ -424,6 +430,9 @@ func calculate_circumcircle_radius(a: Vector2, b: Vector2, c: Vector2):
 # starting half-edge that leads into the point. We can alternate two steps to loop around:
    # 1. Use nextHalfedge(e) to go to the next outgoing half-edge in the current triangle
    # 2. Use halfedges[e] to go to the incoming half-edge in the adjacent triangle
+# * Note: The start point is the value that comes from iterating over 
+# *       over delaunay.triangles.size() and not the actual element value
+# *       in delaunay.triangles
 # Parameters
 # delaunay: the delaunay triangulation
 # start: the index of an incoming half-edge that leads to the desired point

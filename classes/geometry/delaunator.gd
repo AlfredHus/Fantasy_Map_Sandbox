@@ -14,7 +14,7 @@ class_name Delaunator
 # deluanay.points -> The coordinates of the points as an
 # array [x0, y0, x1, y1, ...]
 #
-# To create a Delaunay Triangulation, you use the constructor and pass it the
+# To create a Delaunay Triangulation, you use the constructor and pass it
 # the set of (x,y) point coordinates where points is a flat array of the 
 # form (x0, y0, x1, y1, ...).
 # delaunay = new Delaunator(points) where each point provides the x,y
@@ -24,16 +24,19 @@ class_name Delaunator
 #
 # A triangle edge may be shared with another triangle. Instead of thinking 
 # about each edge A<->B, we will use two half-edges A -> B and B -> A.
+# Note: The indexes into the half-edges array are not the same indexes into
+# triangles array. In order to go from a half-edge to get the triangle
+# index, you use the two helper functions below:
+# Triangle ids and half-edge ids are related
+#   a, The half-edges of triangle "t" are 3*t, 3*t + 1, and 3*t + 2.
+#   b. The triangle of half-edge id "e" is floor(e/3).
 # Half-edges "e" are the indices into both of delaunator's outputs:
 #	a. delaunay.triangles[e] returns the point id where the half-edge starts
 #   b. delaunay.halfedges[e] returns the opposite half-edge in the adjacent 
 #      triangle, or -1 if there is no adjacent triangle.
-# Triangle ids and half-edge ids are related
-#   a, The half-edges of triangle "t" are 3*t, 3*t + 1, and 3*t + 2.
-#   b. The triangle of half-edge id "e" is floor(e/3).
 #
 # deluanay.triangles ->  is an array that contains the triangle vertix indices (each 
-# group of three numbers fomrs a triangle). Each contiguous triplet of
+# group of three numbers forms a triangle). Each contiguous triplet of
 # indexes, i, j, k forms a couinter-clockwise triangle. All triangles are directed
 # counter-clockwise.
 # The coordinates of the triangle points can be found by going through the 
@@ -84,6 +87,7 @@ var _cy: float
 # triangle (or -1 for outer half-edges on the convex hull)
 #var _halfedges := [] # This array should be a PackedInt32Array but we need to use the super.slice() function on it.
 var _halfedges := PackedInt32Array() # packed array of 32-bit integers.
+
 # temporary arrays for tracking the edges of the advancing convex hull
 var _hash_size: int
 var _hull_hash := PackedInt32Array()
@@ -94,14 +98,16 @@ var _hull_tri := PackedInt32Array()
 
 # temporary arrays for sorting points
 var _ids := [] # PackedInt32Array, but causes errors if not an array
-#var _ids := PackedInt32Array()
+
+# The distance from the center of the circumcircle to each point.
 var _dists := PackedFloat32Array()
 
 #var _triangles := []  # This array should be a PackedInt32Array but we need to use the super.slice() function on it.
 var _triangles := PackedInt32Array()
+
 # _init is called first when the constructor is called.
 func _init(points: PackedVector2Array) -> void:
-	#print ("IN_INIT=========================================================")
+
 	if points.size() < 3:
 		push_error(ProjectSettings.get_setting("application/config/name") + " needs at least 3 points.")
 		return
@@ -472,6 +478,7 @@ func _link(a: int, b: int) -> void:
 	_halfedges[a] = b
 	if (b != -1):
 		_halfedges[b] = a
+	pass
 
 
 # Add a new triangle given vertex indices and adjacent half-edge ids.

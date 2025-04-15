@@ -13,21 +13,23 @@ extends Node2D
 ## making the data unintelligable.
 
 # Export Variables
+@export_group("Azgaar Style Map Overlays")
 ## Use this to display precipiation data on Azgaar style maps.
 @export var _display_az_precipitation_data: bool = false
 ## Use this to display temeprature data on Azgaar style maps.
 @export var _display_az_temperature_data: bool = false
 ## Use this to display elevation data on Azgaar style maps.
 @export var _display_az_elevation_data: bool = false
+@export_group("Voronoi and Delaunay Diagram Overlays")
 ## Use this to display the triangle index data over deluanay triangle diagram.
-@export var _display_triangle_indexes: bool = false
-
+@export var _display_triangle_index_data: bool = false
+## Use this to display the voronoi cell vertixes
 @export var _display_voronoi_cell_index_data: bool = false
 
 # Private variables
 var _voronoi: Voronoi # the voronoi data
 var _grid: Grid # the grid data
-var _voronoi_cell_dict: Dictionary
+#var _voronoi_cell_dict: Dictionary
 var _delaunay: Delaunator
 var _points: PackedVector2Array
 var _jittered_grid: bool
@@ -40,6 +42,7 @@ func _ready():
 ## Set up the data structures we need to display data.
 ## [param voronoi] - the voronoi data
 ## [param grid] - the grid data
+## @param
 func setup(voronoi: Voronoi, grid:Grid, delaunay: Delaunator, points: PackedVector2Array, jittered_grid: bool):
 	_grid = grid
 	_voronoi = voronoi
@@ -52,19 +55,20 @@ func setup(voronoi: Voronoi, grid:Grid, delaunay: Delaunator, points: PackedVect
 ## if statements and the @export variables.
 func _draw()  -> void:
 
- 	# Display Data points for Azgaar style maps
-	if _display_az_precipitation_data: display_az_precipitation_data()
-	if _display_az_temperature_data: display_az_temperature_data()
-	if _display_az_elevation_data: display_az_elevation_data()
-	if _display_triangle_indexes: display_triangle_indexes()
-	if _display_voronoi_cell_index_data: _display_voronoi_cell_indexes()
+ 	# Display overlayfor Azgaar style maps
+	if _display_az_precipitation_data: _display_az_precipitation_overlay()
+	if _display_az_temperature_data: _display_az_temperature_overlay()
+	if _display_az_elevation_data: _display_az_elevation_overlay()
+	# Display overlay for voronoi and delaunay diagrams
+	if _display_triangle_index_data: _display_triangle_index_overlay()
+	if _display_voronoi_cell_index_data: _display_voronoi_cell_index_overlay()
 	
 
 # Use these functions with the Azgaar style maps. Will not work with
 # with the Voronoi and Delauany Triangle diagrams.
 
 ## Display precipitation data on azgaar style maps.
-func display_az_precipitation_data() -> void:
+func _display_az_precipitation_overlay() -> void:
 
 	for p in _grid.points_n:
 		var precipitation = _grid.cells["prec"][p]
@@ -76,10 +80,7 @@ func display_az_precipitation_data() -> void:
 		#draw_string(_font, Vector2(result[0], result[1]), str(snapped(precipitation, 0.1)), 0, -1, 8, Color.BLACK)			
 
 ## Display temperature data on azgaar style maps.
-func display_az_temperature_data() -> void:
-	# var voronoi_cell_dict: Dictionary = _voronoi.get_voronoi_cells()	
-	# var font : Font
-	# font = ThemeDB.fallback_font
+func _display_az_temperature_overlay() -> void:
 	
 	for p in _grid.points_n:
 		var temperature = _grid.cells["temp"][p]
@@ -91,7 +92,7 @@ func display_az_temperature_data() -> void:
 		#draw_string(_font, Vector2(result[0], result[1]), str(temperature), 0, -1, 8, Color.BLACK)
 	
 ## Display elevation data on azgaar style maps.
-func display_az_elevation_data() -> void:
+func _display_az_elevation_overlay() -> void:
 
 	for p in _grid.points_n:
 		var elevation = _grid.cells["h"][p]
@@ -102,18 +103,14 @@ func display_az_elevation_data() -> void:
 		_draw_number(Vector2(result[0], result[1]), snapped(elevation, 0.1))
 		#draw_string(_font, Vector2(result[0], result[1]), str(snapped(elevation, 0.1)), 0, -1, 8, Color.BLACK)			
 		
-
-
 # Use these functions with the Voronoi and Delaunay Triangles. Will not work with 
 # the Azgaar style maps
 
 
 ## Display the indexes of each of the triangle vertices and the centroid index for the 
 ## the triangle.		
-func display_triangle_indexes():
+func _display_triangle_index_overlay():
 	var seen : PackedVector2Array
-	# var font : Font
-	# font = ThemeDB.fallback_font
 	var triangle_indexes: Array
 	var points_of_triangle: Array
 		
@@ -141,7 +138,7 @@ func display_triangle_indexes():
 
 
 ## DIsplay the index for each Voronoi Cell Vertex (corner)
-func _display_voronoi_cell_indexes():	
+func _display_voronoi_cell_index_overlay():	
 	var seen: Array[Vector2]
 
 	for key in _voronoi.voronoi_cell_dict.keys():
