@@ -32,6 +32,13 @@ var _temperature_north_pole: float = -30.0
 var _temperature_south_pole: float = -15.0
 var _tropics = [16.0, -20.0]  # Tropics zone
 
+var _temp_north_tropic: float
+var _northern_gradient: float
+var _temp_south_tropic: float
+var _southern_gradient: float
+
+const _TROPICAL_GRADIANT: float = 0.15  # Set default value for tropical gradient
+
 ## Computes and assigns temperature values to each grid cell based on latitude[br]
 ## and elevation. This function first calculates the base temperature at sea[br]
 ## level and then adjusts it according to altitude.[br]
@@ -62,16 +69,13 @@ func calculate_temperatures(grid: Grid, map: Map):
 	grid.cells["temp"].resize(grid.cells["i"].size())
 	grid.cells["temp"].fill(0)
 
-	const TROPICAL_GRADIANT: float = 0.15
-
-	var temp_north_tropic: float = _temperature_equator - _tropics[0] * TROPICAL_GRADIANT
-	var northern_gradient: float = (temp_north_tropic - _temperature_north_pole) / (90 - _tropics[0])
-
-	var temp_south_tropic: float = _temperature_equator + _tropics[1] * TROPICAL_GRADIANT
-	var southern_gradient: float = (temp_south_tropic - _temperature_south_pole) / (90 + _tropics[1])
+	_temp_north_tropic = _temperature_equator - _tropics[0] * _TROPICAL_GRADIANT
+	_northern_gradient = (_temp_north_tropic - _temperature_north_pole) / (90 - _tropics[0])
+	_temp_south_tropic = _temperature_equator + _tropics[1] * _TROPICAL_GRADIANT
+	_southern_gradient = (_temp_south_tropic - _temperature_south_pole) / (90 + _tropics[1])
 
 	var height_exponent_input: float = 2.0 # HARDCODED. FIXME. Need to make this configurable
-	var exponent: float = height_exponent_input
+	#var exponent: float = height_exponent_input
 
 	var grid_size: int = grid.cells["i"].size() 
 	#for row_cell_id in range(0, grid.cells["i"].size(), grid.cells_x):
@@ -111,15 +115,29 @@ func calculate_temperatures(grid: Grid, map: Map):
 ## [b]Returns:[/b][br]
 ## - [b]float[/b]: The estimated sea level temperature at the given latitude.[br]
 #
+# func calculate_sea_level_temp(latitude: float) -> float:
+# 	var is_tropical: bool = latitude <= 16 and latitude >= -20
+# 	if is_tropical:
+# 		return _temperature_equator - abs(latitude) * _TROPICAL_GRADIANT
+
+
+# 	if latitude > 0:
+# 		return _temperature_equator - _tropics[0] * 0.15 - (latitude - _tropics[0]) * ((_temperature_equator - _tropics[0] * 0.15 - _temperature_north_pole) / (90 - _tropics[0]))
+# 	else:
+# 		return _temperature_equator + _tropics[1] * 0.15 + (latitude - _tropics[1]) * ((_temperature_equator + _tropics[1] * 0.15 - _temperature_south_pole) / (90 + _tropics[1]))
+
+
 func calculate_sea_level_temp(latitude: float) -> float:
-	var is_tropical: bool = latitude <= 16 and latitude >= -20
+	var is_tropical: bool = latitude <= 16 && latitude >= -20
+
 	if is_tropical:
 		return _temperature_equator - abs(latitude) * 0.15
 
 	if latitude > 0:
-		return _temperature_equator - _tropics[0] * 0.15 - (latitude - _tropics[0]) * ((_temperature_equator - _tropics[0] * 0.15 - _temperature_north_pole) / (90 - _tropics[0]))
+		return _temp_north_tropic - (latitude - _tropics[0]) * _northern_gradient
 	else:
-		return _temperature_equator + _tropics[1] * 0.15 + (latitude - _tropics[1]) * ((_temperature_equator + _tropics[1] * 0.15 - _temperature_south_pole) / (90 + _tropics[1]))
+		return _temp_south_tropic + (latitude + _tropics[1]) * _southern_gradient
+	
 
 ## Calculates the temperature drop based on altitude. Temperature drops by 6.5°C 
 ## per 1km of altitude. This is known as the lapse rate.[br]
@@ -145,13 +163,13 @@ func get_altitude_temperature_drop(h: float, height_exponent_input: float) -> fl
 	# and the rate of decrease in air temperature is measured with the 
 	# Environmental Lapse Rate which is defined as 6.5°C per km as defined by 
 	# the International Civil Aviation Organization (ICAO) 
-	# Temperature goes down as you go up and vica versa.
+	# Temperature goes down as you go up and vice versa.
 	const LAPSE_RATE: float = 6.5
 	# Height < 20 is water, so don't calculate the altitude temperature drop
 	if h < 20:
 		return 0.0	
 	# h represents the height in the world which varies from 0 - 100.
-	# This meants that height will have a range of 20-18 ** 2 (height can't be
+	# This means that height will have a range of 20-18 ** 2 (height can't be
 	# less than 20 which is water),  where height_exponent_input = 2 
 	# (the default value) to 100-18 **2. Height range = 4 to 6724.
 	var height = pow(h - 18, height_exponent_input)

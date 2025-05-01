@@ -50,7 +50,7 @@ func elevation_color_cpt_city_columbia(elevation_value: int) -> Color:
 #$ Color scheme used for temperature map
 func temperature_color_scheme(temperature: float) -> Color:
 	# Color mapping based on the Universal Thermal Scale:
-	# https://en.wikipedia.org/wiki/Trewartha_climate_classification
+	# hhttps://en.wikipedia.org/wiki/Trewartha_climate_classification#Universal_Thermal_Scale
 	if temperature >= 35.0: # Severly Hot - 5 °C  or higher 
 		return Color.DARK_RED
 	elif temperature >= 28.0 && temperature < 35.0: # Very Hot - 28 to 34.9 °C

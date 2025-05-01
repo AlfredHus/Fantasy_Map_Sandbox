@@ -26,12 +26,17 @@ extends Node2D
 ## Use this to display the voronoi cell vertixes
 @export var _display_voronoi_cell_index_data: bool = false
 
+@export var _display_latitude_and_longitude_data: bool = false
+
+
+
 # Private variables
 var _voronoi: Voronoi # the voronoi data
 var _grid: Grid # the grid data
 #var _voronoi_cell_dict: Dictionary
 var _delaunay: Delaunator
 var _points: PackedVector2Array
+var _map: Map
 var _jittered_grid: bool
 var _font : Font
 
@@ -43,10 +48,11 @@ func _ready():
 ## [param voronoi] - the voronoi data
 ## [param grid] - the grid data
 ## @param
-func setup(voronoi: Voronoi, grid:Grid, delaunay: Delaunator, points: PackedVector2Array, jittered_grid: bool):
+func setup(voronoi: Voronoi, grid:Grid, delaunay: Delaunator, points: PackedVector2Array, map: Map, jittered_grid: bool):
 	_grid = grid
 	_voronoi = voronoi
 	_delaunay = delaunay
+	_map = map
 	_points = points
 	_jittered_grid = jittered_grid
 	_font = ThemeDB.fallback_font
@@ -62,6 +68,7 @@ func _draw()  -> void:
 	# Display overlay for voronoi and delaunay diagrams
 	if _display_triangle_index_data: _display_triangle_index_overlay()
 	if _display_voronoi_cell_index_data: _display_voronoi_cell_index_overlay()
+	if _display_latitude_and_longitude_data: _display_longitude_and_latitude()
 	
 
 # Use these functions with the Azgaar style maps. Will not work with
@@ -90,6 +97,22 @@ func _display_az_temperature_overlay() -> void:
 		# set up to print out the temperature value
 		_draw_number(Vector2(result[0], result[1]), temperature)
 		#draw_string(_font, Vector2(result[0], result[1]), str(temperature), 0, -1, 8, Color.BLACK)
+
+
+func _display_longitude_and_latitude() -> void:
+	for p in _grid.points:
+		var latitude = _map.get_latitude(p.x, _grid.width, 2)
+		var longitude = _map.get_longitude(p.y, _grid.height, 2)
+			# Get the position polylabel position to display the value to
+		#var result: Array[float] = _get_poly_label(w)  # Use 'w' for the polylabel position
+
+			# Additional logic to display latitude and longitude can be added here
+		draw_string(_font, p, str(latitude) + ", " + str(longitude), HorizontalAlignment.HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color.BLACK)
+		
+	print ("grid.cells_x: ", _grid.cells_x, " : ", "grid.cells_y: ", _grid.cells_y)
+	var grid_size = _grid.get_cols_and_rows()
+	print ("grid_cols: ", grid_size["cols"], " : ", "grid_rows: ", grid_size["rows"])
+	print ("Size of points: ", _grid.points.size())
 	
 ## Display elevation data on azgaar style maps.
 func _display_az_elevation_overlay() -> void:
@@ -101,14 +124,16 @@ func _display_az_elevation_overlay() -> void:
 		var result: Array[float] = _get_poly_label(p)
 		# set up to print out the precipitation value
 		_draw_number(Vector2(result[0], result[1]), snapped(elevation, 0.1))
-		#draw_string(_font, Vector2(result[0], result[1]), str(snapped(elevation, 0.1)), 0, -1, 8, Color.BLACK)			
+
+		
+			
 		
 # Use these functions with the Voronoi and Delaunay Triangles. Will not work with 
 # the Azgaar style maps
 
 
-## Display the indexes of each of the triangle vertices and the centroid index for the 
-## the triangle.		
+## Display the indexes of each of the triangle vertices and the centroid 
+## index for the the triangle.		
 func _display_triangle_index_overlay():
 	var seen : PackedVector2Array
 	var triangle_indexes: Array
@@ -162,7 +187,7 @@ func _display_voronoi_cell_index_overlay():
 
 ## Display a number at a specific position (x,y) on the screen.
 func _draw_number(number_position: Vector2, id: int, size_of_font: int = 10, font_color: Color = Color.BLACK) -> void:
-	draw_string(_font, number_position, str(id), HorizontalAlignment.HORIZONTAL_ALIGNMENT_LEFT, -1, size_of_font, font_color)
+	draw_string(_font, number_position, str(id), 6, -1, size_of_font, font_color)
 
 
 # Get the polylabel position for the voronoi cell (i.e., polygon)

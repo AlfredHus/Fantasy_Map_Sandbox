@@ -1,20 +1,24 @@
-[gd_scene load_steps=4 format=3 uid="uid://cxglm7a4qsn7q"]
+[gd_scene load_steps=5 format=3 uid="uid://cxglm7a4qsn7q"]
 
 [ext_resource type="Script" uid="uid://dsupr2g7tvxxr" path="res://main.gd" id="1_l63tg"]
 [ext_resource type="Script" uid="uid://doif7w3wwsr4t" path="res://classes/debug/data_overlay.gd" id="2_tru4q"]
 [ext_resource type="Script" uid="uid://dpygrpme07pu7" path="res://map_camera2D.gd" id="2_w6rrm"]
+[ext_resource type="Script" uid="uid://cjacdlkcabrk6" path="res://classes/World/graticule.gd" id="4_cdt8t"]
 
 [node name="FantasyMapSandbox" type="Node2D"]
 script = ExtResource("1_l63tg")
-_initial_points = true
-_default_seed_points = 25
-_draw_halfedges = true
-_cells_desired = 1000
+_jittered_grid = true
+_default_seed_points = 50
 area = Rect2(0, 0, 1920, 1080)
 _selected_world = 3
+_draw_az_elevation_map = true
 
 [node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("2_w6rrm")
 
 [node name="DataOverlay" type="Node2D" parent="."]
 script = ExtResource("2_tru4q")
+
+[node name="Graticule" type="Node2D" parent="."]
+script = ExtResource("4_cdt8t")
+_toggle_grid = true

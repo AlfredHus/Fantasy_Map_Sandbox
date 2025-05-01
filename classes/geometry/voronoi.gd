@@ -87,8 +87,8 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 
 	var cell_points: PackedVector2Array
 
-	print ("half-edges: ", delaunay.halfedges)
-	print("triangles: ", delaunay.triangles)
+	#print ("half-edges: ", delaunay.halfedges)
+	#print("triangles: ", delaunay.triangles)
 
 
 
@@ -172,7 +172,7 @@ func _init(points: PackedVector2Array, grid: Grid, delaunay: Delaunator, boundar
 			# ([16, 39, 14], [53, 85, 32], [41, 72, 94]...)
 			grid.vertices["c"][t] = index_of_triangle(delaunay, t)     
 
-	print ("grid.vertices[c]: ", grid.vertices["c"])
+	#print ("grid.vertices[c]: ", grid.vertices["c"])
 	setup_voronoi_cells(points, delaunay)
 	setup_triangle_centers(points, delaunay)
 	setup_triangle_edges(points, delaunay)

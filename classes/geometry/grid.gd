@@ -179,7 +179,7 @@ func _init(cells_desired: int, area: Rect2):
 	#
 	## The number of points before adding the boundary points.	
 	#points_n = points.size()
-	## Generate the boundary points add thenm to the end of the points array.
+	## Generate the boundary points add them to the end of the points array.
 	#exterior_boundary_points = generate_exterior_boundary_points(_grid_area, spacing)
 	#for i in exterior_boundary_points:
 			#points.append(i)
@@ -188,7 +188,7 @@ func _init(cells_desired: int, area: Rect2):
 	#return points
 	
 ## 
-## Sets up the points for the delauanay and voronoi. Generates the points 
+## Sets up the points for the delaunay and voronoi. Generates the points 
 ## and the exterior boundary points.
 ## [br]
 ## [b]Modified Class Members[/b][br]
@@ -524,8 +524,13 @@ func isWater(i):
 func dist2(p1: Array, p2: Array) -> float:
 	return (p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2
 
-	
 
+## Get the rows and cols for the grid	
+func get_cols_and_rows():
+	return {
+		"cols": max(floor(width / spacing), 1),
+		"rows": max(floor(height / spacing), 1)
+	}
 			
 		
 	

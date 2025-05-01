@@ -326,7 +326,7 @@ func _ready()  -> void:
 	var world_selected = select_azgaar_style_world(_selected_world)
 	
 	# Give the voronoi and grid data to the data overlay functions
-	data_overlay.setup(voronoi, grid, delaunay, points, _jittered_grid)
+	data_overlay.setup(voronoi, grid, delaunay, points, map, _jittered_grid)
 	# Generate Azgaars Fantasy Map. Only do this if generating a azgaar style
 	# world which uses jittered points.
 	# TODO: Fix this so that it can also be used with poisson distribution

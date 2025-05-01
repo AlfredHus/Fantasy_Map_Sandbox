@@ -7,10 +7,20 @@ extends Node
 var size
 var latitude
 var longitude
-var map_coordinates = {}
+var map_coordinates = {
+# Contains the following:
+	# latitude_T
+	# latitude_N
+	# latitude_S
+	# longitude_T
+	# longitude_E
+	# longitude_W
+}
+
 
 # Code ported from main.js:
 # https://github.com/Azgaar/Fantasy-Map-Generator/blob/master/main.js
+## Returns the map size and position based on the selected template.
 func get_size_and_latitude(template: String, grid: Grid) -> Array:
 	
 	# FIXME: I don't handle the pre-defined images (europe, etc) since I 
@@ -31,7 +41,7 @@ func get_size_and_latitude(template: String, grid: Grid) -> Array:
 	
 	# JAVASCRIPT CODE : const lat = () => gauss(P(0.5) ? 40 : 60, 20, 25, 75);
 	var expected = 40 if ProbabilityUtilities.P(0.5) else 60
-	var lat1 = ProbabilityUtilities.gauss(expected, 20, 25, 75) # latitude shift
+	#var lat1 = ProbabilityUtilities.gauss(expected, 20, 25, 75) # latitude shift
 	# Single line version using annonymous function
 	var lat = func() -> float:
 		return ProbabilityUtilities.gauss(40 if ProbabilityUtilities.P(0.5) else 60, 20, 25, 75)
@@ -49,6 +59,7 @@ func get_size_and_latitude(template: String, grid: Grid) -> Array:
 			return [100, 50, 50];
 		if template == "lowIsland" && ProbabilityUtilities.P(0.1):
 			return [100, 50, 50];	
+
 			
 	if (template == "pangea"):
 		return [ProbabilityUtilities.gauss(70, 20, 30, maximum), lat.call(), 50];
@@ -63,6 +74,7 @@ func get_size_and_latitude(template: String, grid: Grid) -> Array:
 	if (template == "atoll"):
 		return [ProbabilityUtilities.gauss(3, 2, 1, 5, 1), lat.call(), 50];
 
+	# If none of the above templates, use a default
 	return[ProbabilityUtilities.gauss(30, 20, 15, maximum), lat.call(), 50]
 	
 # Code ported from main.js:
@@ -78,26 +90,43 @@ func define_map_size(template: String, grid: Grid):
 # https://github.com/Azgaar/Fantasy-Map-Generator/blob/master/main.js
 # Calculate map position on globe	
 func calculate_map_coordinates(grid:Grid):
-	var size_fraction = size/100
-	var latitude_shift = latitude/100
-	var longitude_shift = longitude/100
+	var size_fraction: float = size/100
+	var latitude_shift: float = latitude/100
+	var longitude_shift: float = longitude/100
 	
-	var latitude_T = GeneralUtilities.rn(size_fraction * 180, 1)
-	var latitude_N = GeneralUtilities.rn(90 - (180 - latitude_T) * latitude_shift, 1)
-	var latitude_S = GeneralUtilities.rn(latitude_N - latitude_T, 1)
+	var latitude_T: float = GeneralUtilities.rn(size_fraction * 180, 1)
+	var latitude_N: float = GeneralUtilities.rn(90 - (180 - latitude_T) * latitude_shift, 1)
+	var latitude_S: float = GeneralUtilities.rn(latitude_N - latitude_T, 1)
 	
-	var longitude_T = GeneralUtilities.rn(min((grid.width/grid.height) * latitude_T, 360), 1)
-	var longitude_E = GeneralUtilities.rn(180 - (360 - longitude_T) * longitude_shift, 1)
-	var longitude_W = GeneralUtilities.rn(longitude_E - longitude_T, 1)
+	var longitude_T: float = GeneralUtilities.rn(min((grid.width/grid.height) * latitude_T, 360), 1)
+	var longitude_E: float = GeneralUtilities.rn(180 - (360 - longitude_T) * longitude_shift, 1)
+	var longitude_W: float = GeneralUtilities.rn(longitude_E - longitude_T, 1)
 	
 	map_coordinates = {
 		"latitude_T" : latitude_T,
 		"latitude_N" : latitude_N,
 		"latitude_S": latitude_S,
+
+
+
+		
 		"longitude_T": longitude_T,
 		"longitude_E ": longitude_E,
-		"longitude_W": longitude_W	
-	}
-	
-	
-	
+		"longitude_W": longitude_W
+		}
+		
+
+
+func get_longitude(x, grid_width, decimal = 2) -> float:
+	var latitude = GeneralUtilities.rn(map_coordinates["longitude_W"] + (x / grid_width) * map_coordinates["longitude_T"], decimal)
+	return latitude
+
+
+func get_latitude(y, grid_height, decimal = 2) -> float:
+	var latitude = GeneralUtilities.rn(map_coordinates["latitude_N"] - (y / grid_height) * map_coordinates["latitude_T"], decimal)
+	return latitude
+
+
+
+
+
